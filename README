@@ -1,0 +1,75 @@
+NAME
+
+    get-gauche.sh - Ensure Gauche availability
+
+SYNOPSIS
+
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX]
+                  [--version VERSION][--check-only][--force]
+
+DESCRIPTION
+
+    The `get-gauche.sh` script is a convenient way to ensure Gauche installed
+    on the running platform.  By default, it checks if the desired version
+    of Gauche is already installed, and if not, download the tarball and
+    install it.
+
+    It can be also used with distributing Gauche applications.
+    In the application's configure or installation script, you can call
+    get-gauche.sh.
+
+    If --check-only option is given, the script only checks if Gauche
+    has already installed but do not attempt to download and install.
+
+    If --force options is given, the script directly download and install
+    Gauche, regardless of whether Gauche is already installed or not.
+
+    The installation location can be specified by --prefix, --system,
+    --home or --current option.  These options are mutually exclusive.
+    Note that availability check doesn't care where Gauche exists; these
+    option affects only when the script need to install Gauche.
+
+    If you don't have write permission in the install destination, the
+    script invokes install process via sudo.  It asks your password.
+
+
+OPTIONS
+
+    --check-only
+        detect Gauche and report result, but not to attempt download
+        and install.
+
+    --current
+        install Gauche under the current directory.
+        Equivalent to --prefix `pwd`.
+
+    --force
+        do not check if Gauche has already installed or not, and always
+        download ans install one.
+
+    --home
+        install Gauche under the user's home directory.
+        Equivalent to --preifx $HOME.
+
+    --prefix PREFIX
+        install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
+        binary libraries are in PREFIX/lib, etc.
+
+    --system
+        install Gauche under system directory.
+        Equivalen to --prefix /usr.
+
+    --version VERSION
+        specify the desired version of Gauche.  VERSION can be a version
+        string (e.g. `0.9.5'), or either `latest' or `snapshot'.  The word
+        `latest' picks the latest release.  The word `snapshot' picks the
+        newest snapshot tarball if there's any newer than the latest
+        release, or the latest release otherwise.
+        By default, `latest' is assumed.
+
+
+
+
+
+
+
