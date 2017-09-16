@@ -51,9 +51,6 @@ Options:
 EOF
 }
 
-CWD=`pwd`
-WORKDIR=`mktemp -d $CWD/tmpXXXXXXXX`
-
 function cleanup {
     if [ -d "$WORKDIR" ]; then
         rm -rf "$WORKDIR"
@@ -65,6 +62,24 @@ trap cleanup EXIT
 function do_list {
     curl $API/.txt
     exit 0
+}
+
+function do_fetch_and_install {
+    CWD=`pwd`
+    WORKDIR=`mktemp -d $CWD/tmp.XXXXXXXX`
+
+    cd $WORKDIR
+    curl -L -o Gauche-$version.tgz $API/$version.tgz
+    tar xf Gauche-$version.tgz
+    cd Gauche-$version
+    ./configure --prefix=$prefix
+    make -j
+    make -s check
+    make install
+
+    echo "################################################################"
+    echo "#  Gauche installed under $prefix/bin"
+    echo "################################################################"
 }
 
 ################################################################
@@ -109,9 +124,12 @@ do
         --check-only) check_only=yes ;;
         --force)      force=yes ;;
 
-        *) echo "bong"; usage; exit 1;;
+        *) usage; exit 1;;
     esac
     shift
 done
 
+if [ $force = yes -o $check_only != yes ]; then
+    do_fetch_and_install
+fi
 

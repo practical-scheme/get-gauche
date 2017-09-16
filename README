@@ -5,7 +5,7 @@ NAME
 SYNOPSIS
 
     get-gauche.sh [--system|--home|--current|--prefix PREFIX]
-                  [--version VERSION][--check-only][--force]
+                  [--version VERSION][--check-only][--force][--list]
 
 DESCRIPTION
 
