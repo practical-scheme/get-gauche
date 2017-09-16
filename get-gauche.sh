@@ -2,6 +2,8 @@
 
 set -e
 
+API=https://practical-scheme.net/gauche/releases
+
 # Ensure Gauche availability
 # https://github.com/shirok/get-gauche/README
 
@@ -9,7 +11,7 @@ function usage() {
     cat <<"EOF"
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX]
-                  [--version VERSION][--check-only][--force]
+                  [--version VERSION][--check-only][--force][--list]
 Options:
     --check-only
         detect Gauche and report result, but not to attempt download
@@ -26,6 +28,10 @@ Options:
     --home
         install Gauche under the user's home directory.
         Equivalent to --preifx $HOME.
+
+    --list
+        show valid Gauche versions for --version option and exit.  No
+        other operations are performed.
 
     --prefix PREFIX
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
@@ -55,6 +61,11 @@ function cleanup {
 }
 
 trap cleanup EXIT
+
+function do_list {
+    curl $API/.txt
+    exit 0
+}
 
 ################################################################
 # main entry point
@@ -86,6 +97,8 @@ do
     esac
     
     case $option in
+        --list)     do_list;;
+
         --system)   prefix=/usr ;;
         --home)     prefix=$HOME ;;
         --current)  prefix=`pwd` ;;

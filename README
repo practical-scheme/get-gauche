@@ -51,6 +51,10 @@ OPTIONS
         install Gauche under the user's home directory.
         Equivalent to --preifx $HOME.
 
+    --list
+        show valid Gauche versions for --version option and exit.  No
+        other operations are performed.
+
     --prefix PREFIX
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
