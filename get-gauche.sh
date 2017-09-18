@@ -68,8 +68,6 @@ function do_check_gosh {
     if [ $prefix = `pwd` ]; then
         PATH=`pwd`/bin:$PATH
     fi
-    echo "WRITEME"
-    exit 1
 }
 
 function do_fetch_and_install {
@@ -82,7 +80,8 @@ function do_fetch_and_install {
         exit 1
     fi
     tar xf Gauche-$version.tgz
-    cd Gauche-$version
+    # The actual directory name may differ when $version is latest or snapshot
+    cd Gauche-*
     ./configure --prefix=$prefix
     make -j
     make -s check
@@ -140,7 +139,6 @@ do
     shift
 done
 
-if [ $force = yes -o $check_only != yes ]; then
+if [ "$force" = yes -o "$check_only" != yes ]; then
     do_fetch_and_install
 fi
-
