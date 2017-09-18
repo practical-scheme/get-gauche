@@ -60,8 +60,16 @@ function cleanup {
 trap cleanup EXIT
 
 function do_list {
-    curl $API/.txt
+    curl -f $API/.txt
     exit 0
+}
+
+function do_check_gosh {
+    if [ $prefix = `pwd` ]; then
+        PATH=`pwd`/bin:$PATH
+    fi
+    echo "WRITEME"
+    exit 1
 }
 
 function do_fetch_and_install {
@@ -69,7 +77,10 @@ function do_fetch_and_install {
     WORKDIR=`mktemp -d $CWD/tmp.XXXXXXXX`
 
     cd $WORKDIR
-    curl -L -o Gauche-$version.tgz $API/$version.tgz
+    if ! curl -f -L -o Gauche-$version.tgz $API/$version.tgz; then
+        echo "Failed URL:" $API/$version.tgz
+        exit 1
+    fi
     tar xf Gauche-$version.tgz
     cd Gauche-$version
     ./configure --prefix=$prefix
