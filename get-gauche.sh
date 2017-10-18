@@ -93,7 +93,7 @@ function do_fetch_and_install {
     if test X"$staticlib" = Xyes; then
         echo `pwd`
         (cd src; LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,dbm.ndbm,dbm.odbm make --no-print-directory BUILD_GOSH=$prefix/bin/gosh static)
-        cp src/libgauche-static-*.a $prefix/lib
+        cp src/libgauche-static-*.a `$prefix/bin/gauche-config --sysarchdir`
     fi
 
     echo "################################################################"
