@@ -37,6 +37,10 @@ Options:
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
 
+    --static
+        build and install static library as well.  Note: The static library
+        excludes gdbm libraries to avoid licensing complication.
+
     --system
         install Gauche under system directory.
         Equivalen to --prefix /usr.
@@ -86,6 +90,11 @@ function do_fetch_and_install {
     make -j
     make -s check
     make install
+    if test X"$staticlib" = Xyes; then
+        echo `pwd`
+        (cd src; LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,dbm.ndbm,dbm.odbm make --no-print-directory BUILD_GOSH=$prefix/bin/gosh static)
+        cp src/libgauche-static-*.a $prefix/lib
+    fi
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
@@ -133,6 +142,8 @@ do
         
         --check-only) check_only=yes ;;
         --force)      force=yes ;;
+
+        --static)   staticlib=yes ;;
 
         *) usage; exit 1;;
     esac
