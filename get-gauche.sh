@@ -74,9 +74,6 @@ function do_check_gosh {
         PATH=`pwd`/bin:$PATH
     fi
     gosh_path=`which gosh || :`
-    if [ ! -z "$gosh_path" ]; then
-        gosh_version=`$gosh_path -V`
-    fi
 }
 
 function do_fetch_and_install {
@@ -162,7 +159,7 @@ if [ "$check_only" = yes ]; then
         exit 1
     else
         echo "Found gosh in $gosh_path"
-        echo $gosh_version
+        $gosh_version -V
         exit 0
     fi
 fi
@@ -170,17 +167,17 @@ fi
 #
 # Resolve 'latest' and 'snapshot' versions to the actual version
 #
-
 case $desired_version in
     latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
 
 #
-# Compare current version
+# Compare with current version
 #
-
-current_version=`echo $gosh_version | sed -r 's/.*version ([0-9]\.[^ ]+).*/\1/'`
+if [ ! -z "$gosh_path" ]; then
+   current_version=`$gosh_path -E "print (gauche-version)" -Eexit`
+fi
 
 if [ -z "$current_version" ]; then
     echo "Gauche is not found on the system."
@@ -191,7 +188,10 @@ else
         need_install=yes
     fi
 fi
-    
+
+#
+# Proceed to install
+#
 if [ "$force" = yes -o "$need_install" = yes ]; then
     if [ "$auto" != yes ]; then
       echo -n "Install Gauche $desired_version under $prefix? [y/N]: "
