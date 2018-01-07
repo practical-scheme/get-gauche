@@ -49,8 +49,8 @@ OPTIONS
         Equivalent to --prefix `pwd`.
 
     --force
-        do not check if Gauche has already installed or not, and always
-        download ans install one.
+        regardless of the result of version check, always download and
+        install the specified version of Gauche.
 
     --home
         install Gauche under the user's home directory.
