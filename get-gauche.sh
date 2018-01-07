@@ -98,6 +98,15 @@ function do_fetch_and_install {
     echo "################################################################"
 }
 
+function compare_version {
+    $gosh_path -b <<EOF
+(use gauche.version)
+(if (version>? "$1" "$2")
+  (print "GT")
+  (print "LE"))
+EOF
+}
+
 ################################################################
 # main entry point
 #
@@ -183,10 +192,12 @@ if [ -z "$current_version" ]; then
     echo "Gauche is not found on the system."
     need_install=yes
 else
-    echo "You have Gauche $current_version."
-    if [ "$desired_version" != "$current_version" ]; then
-        need_install=yes
-    fi
+    cmp=`compare_version $desired_version $current_version`
+    case $cmp in
+        GT) echo "You have Gauche $current_version."
+            need_install=yes;;
+        LE) echo "You already have Gauche $current_version.";;
+    esac
 fi
 
 #

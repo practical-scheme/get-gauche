@@ -30,7 +30,7 @@ DESCRIPTION
     option affects only when the script need to install Gauche.
 
     If you don't have write permission in the install destination, the
-    script invokes install process via sudo.  It asks your password.
+    script needs to be invoked via sudo (not recommended).
 
 
 OPTIONS
