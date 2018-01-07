@@ -37,10 +37,6 @@ Options:
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
 
-    --static
-        build and install static library as well.  Note: The static library
-        excludes gdbm libraries to avoid licensing complication.
-
     --system
         install Gauche under system directory.
         Equivalen to --prefix /usr.
@@ -72,6 +68,10 @@ function do_check_gosh {
     if [ $prefix = `pwd` ]; then
         PATH=`pwd`/bin:$PATH
     fi
+    gosh_path=`which gosh || :`
+    if [ ! -z "$gosh_path" ]; then
+        gosh_version=`$gosh_path -V`
+    fi
 }
 
 function do_fetch_and_install {
@@ -79,22 +79,17 @@ function do_fetch_and_install {
     WORKDIR=`mktemp -d $CWD/tmp.XXXXXXXX`
 
     cd $WORKDIR
-    if ! curl -f -L -o Gauche-$version.tgz $API/$version.tgz; then
-        echo "Failed URL:" $API/$version.tgz
+    if ! curl -f -L -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
+        echo "Failed URL:" $API/$desired_version.tgz
         exit 1
     fi
-    tar xf Gauche-$version.tgz
+    tar xf Gauche-$desired_version.tgz
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
     ./configure --prefix=$prefix
     make -j
     make -s check
     make install
-    if test X"$staticlib" = Xyes; then
-        echo `pwd`
-        (cd src; LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,dbm.ndbm,dbm.odbm make --no-print-directory BUILD_GOSH=$prefix/bin/gosh static)
-        cp src/libgauche-static-*.a `$prefix/bin/gauche-config --sysarchdir`
-    fi
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
@@ -106,7 +101,7 @@ function do_fetch_and_install {
 #
 
 prefix=$HOME
-version=latest
+desired_version=latest
 check_only=no
 force=no
 
@@ -138,7 +133,7 @@ do
         --current)  prefix=`pwd` ;;
         --prefix)   prefix=$optarg; $extra_shift ;;
 
-        --version)  version=$optarg; $extra_shift ;;
+        --version)  desired_version=$optarg; $extra_shift ;;
         
         --check-only) check_only=yes ;;
         --force)      force=yes ;;
@@ -150,6 +145,48 @@ do
     shift
 done
 
-if [ "$force" = yes -o "$check_only" != yes ]; then
+do_check_gosh
+
+#
+# If --check-only, just report the check result and exit
+#
+if [ "$check_only" = yes ]; then
+    if [ -z $gosh_path ]; then
+        echo "Gauche not found"
+        exit 1
+    else
+        echo "Found gosh in $gosh_path"
+        echo $gosh_version
+        exit 0
+    fi
+fi
+
+#
+# Resolve 'latest' and 'snapshot' versions to the actual version
+#
+
+case $desired_version in
+    latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
+    snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
+esac
+
+#
+# Compare current version
+#
+
+current_version=`echo $gosh_version | sed -r 's/.*version ([0-9]\.[^ ]+).*/\1/'`
+
+if [ -z "$current_version" ]; then
+    echo "Gauche is not found on the system."
+    need_install=yes
+else
+    echo "You have Gauche $current_version."
+    if [ "$desired_version" != "$current_version" ]; then
+        need_install=yes
+    fi
+fi
+    
+if [ "$force" = yes -o "$need_install" = yes ]; then
+    echo "Start installing Gauche $desired_version under $prefix..."
     do_fetch_and_install
 fi
