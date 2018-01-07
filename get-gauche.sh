@@ -10,9 +10,14 @@ API=https://practical-scheme.net/gauche/releases
 function usage() {
     cat <<"EOF"
 Usage:
-    get-gauche.sh [--system|--home|--current|--prefix PREFIX]
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
 Options:
+    --auto
+        When get-gauche.sh finds Gauche needs to be installed, it proceed
+        to download and install without asking the user.  By default,
+        the user is asked before download begins.
+
     --check-only
         detect Gauche and report result, but not to attempt download
         and install.
@@ -135,6 +140,7 @@ do
 
         --version)  desired_version=$optarg; $extra_shift ;;
         
+        --auto)     auto=yes ;;
         --check-only) check_only=yes ;;
         --force)      force=yes ;;
 
@@ -187,6 +193,14 @@ else
 fi
     
 if [ "$force" = yes -o "$need_install" = yes ]; then
-    echo "Start installing Gauche $desired_version under $prefix..."
+    if [ "$auto" != yes ]; then
+      echo -n "Install Gauche $desired_version under $prefix? [y/N]: "
+      read ans
+      case "$ans" in
+          [yY]*) ;;
+          *) exit 0;;
+      esac
+    fi
+    echo "Start installing Gauche $desired_version..."
     do_fetch_and_install
 fi

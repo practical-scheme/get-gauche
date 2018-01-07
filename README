@@ -4,7 +4,7 @@ NAME
 
 SYNOPSIS
 
-    get-gauche.sh [--system|--home|--current|--prefix PREFIX]
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
 
 DESCRIPTION
@@ -34,6 +34,11 @@ DESCRIPTION
 
 
 OPTIONS
+
+    --auto
+        When get-gauche.sh finds Gauche needs to be installed, it proceed
+        to download and install without asking the user.  By default,
+        the user is asked before download begins.
 
     --check-only
         detect Gauche and report result, but not to attempt download
