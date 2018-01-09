@@ -194,9 +194,13 @@ if [ -z "$current_version" ]; then
 else
     cmp=`compare_version $desired_version $current_version`
     case $cmp in
-        GT) echo "You have Gauche $current_version."
+        GT) echo "You have Gauche $current_version in $gosh_path."
             need_install=yes;;
-        LE) echo "You already have Gauche $current_version.";;
+        LE) echo "You already have Gauche $current_version in $gosh_path."
+            if [ "$force" != yes ]; then
+                echo "No need to install.  (Use --force option to install $desired_version.)"
+            fi
+            ;;
     esac
 fi
 
