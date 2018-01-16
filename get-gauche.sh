@@ -44,7 +44,7 @@ Options:
 
     --system
         install Gauche under system directory.
-        Equivalen to --prefix /usr.
+        Equivalent to --prefix /usr.
 
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version
