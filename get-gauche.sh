@@ -70,9 +70,9 @@ function do_list {
 }
 
 function do_check_gosh {
-    if [ $prefix = `pwd` ]; then
-        PATH=`pwd`/bin:$PATH
-    fi
+    # We add $prefix/bin to path so that if gosh has been installed with
+    # the given prefix we can find it.
+    PATH=$prefix/bin:$PATH
     gosh_path=`which gosh || :`
 }
 
