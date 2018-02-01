@@ -6,6 +6,7 @@ SYNOPSIS
 
     get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
+                  [--ensure-prefix]
 
 DESCRIPTION
 
@@ -21,13 +22,19 @@ DESCRIPTION
     If --check-only option is given, the script only checks if Gauche
     has already installed but do not attempt to download and install.
 
+    The installation location can be specified by --prefix, --system,
+    --home or --current option.  These options are mutually exclusive.
+
     If --force options is given, the script directly download and install
     Gauche, regardless of whether Gauche is already installed or not.
 
-    The installation location can be specified by --prefix, --system,
-    --home or --current option.  These options are mutually exclusive.
-    Note that availability check doesn't care where Gauche exists; these
-    option affects only when the script need to install Gauche.
+    By default, installed Gauche is searched in $PATH as well as the
+    specified location.  So, for example, if Gauche is installed under 
+    /usr and 'get-gauche.sh --home' is run, and if it finds /usr/bin/gosh
+    and the version requirement is satisfied, it won't attempt to install
+    Gauche unless --force option is given.  If you want to ensure that
+    desired Gauche is always installed under specified location, use
+    --ensure-prefix option.
 
     If you don't have write permission in the install destination, the
     script needs to be invoked via sudo (not recommended).
@@ -47,6 +54,11 @@ OPTIONS
     --current
         install Gauche under the current directory.
         Equivalent to --prefix `pwd`.
+
+    --ensure-prefix
+        detect Gauche only under prefix (specified by --prefix, --system,
+        --home or --current option).  By default, get-gauche.sh also checks
+        under directories in PATH.
 
     --force
         regardless of the result of version check, always download and
@@ -76,9 +88,23 @@ OPTIONS
         release, or the latest release otherwise.
         By default, `latest' is assumed.
 
+EXAMPLES
 
+    1. You want to have the latest release of Gauche.  If the system
+    already has it, you can use it.  Otherwise, install under your home
+    directory.
 
+       $ get-gauche.sh --home
 
+    2. You distribute a Gauche application, and always want to use Gauche 
+    0.9.4 under application-specific directory.  You can run get-gauche.sh
+    during the build or installation process of your application as follows:
 
+       $ get-gauche.sh --version 0.9.4 --prefix /app/dir/gauche \
+                       --ensure-prefix --auto
 
+    The --ensure-prefix option ignores other Gauches installed under PATH
+    but only checks /app/dir/gauche.  If there's already 0.9.4 or later
+    Gauche under that directory, you'll use it.  Otherwise that version
+    is downloaded and installed there.
 

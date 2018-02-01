@@ -12,6 +12,7 @@ function usage() {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
+                  [--ensure-prefix]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -25,6 +26,11 @@ Options:
     --current
         install Gauche under the current directory.
         Equivalent to --prefix `pwd`.
+
+    --ensure-prefix
+        detect Gauche only under prefix (specified by --prefix, --system,
+        --home or --current option).  By default, get-gauche.sh also checks
+        under directories in PATH.
 
     --force
         regardless of the result of version check, always download and
@@ -70,10 +76,16 @@ function do_list {
 }
 
 function do_check_gosh {
-    # We add $prefix/bin to path so that if gosh has been installed with
-    # the given prefix we can find it.
-    PATH=$prefix/bin:$PATH
-    gosh_path=`which gosh || :`
+    old_path=$PATH
+    if [ $ensure_prefix = "yes" ]; then
+        PATH=$prefix/bin
+    else
+        # We add $prefix/bin to path so that if gosh has been installed with
+        # the given prefix we can find it.
+        PATH=$prefix/bin:$PATH
+    fi
+    gosh_path=`/usr/bin/which gosh || :`
+    PATH=$old_path
 }
 
 function do_fetch_and_install {
@@ -114,6 +126,7 @@ EOF
 prefix=$HOME
 desired_version=latest
 check_only=no
+ensure_prefix=no
 force=no
 
 while test $# != 0
@@ -146,9 +159,10 @@ do
 
         --version)  desired_version=$optarg; $extra_shift ;;
         
-        --auto)     auto=yes ;;
-        --check-only) check_only=yes ;;
-        --force)      force=yes ;;
+        --auto)          auto=yes ;;
+        --check-only)    check_only=yes ;;
+        --ensure-prefix) ensure_prefix=yes ;;
+        --force)         force=yes ;;
 
         --static)   staticlib=yes ;;
 
@@ -189,7 +203,11 @@ if [ ! -z "$gosh_path" ]; then
 fi
 
 if [ -z "$current_version" ]; then
-    echo "Gauche is not found on the system."
+    if [ "$ensure_prefix" = "yes" ]; then
+        echo "Gauche is not found in $prefix."
+    else
+        echo "Gauche is not found on the system."
+    fi
     need_install=yes
 else
     cmp=`compare_version $desired_version $current_version`
