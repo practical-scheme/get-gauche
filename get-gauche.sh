@@ -12,7 +12,7 @@ function usage() {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
-                  [--ensure-prefix]
+                  [--fixed-path]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -27,7 +27,7 @@ Options:
         install Gauche under the current directory.
         Equivalent to --prefix `pwd`.
 
-    --ensure-prefix
+    --fixed-path
         detect Gauche only under prefix (specified by --prefix, --system,
         --home or --current option).  By default, get-gauche.sh also checks
         under directories in PATH.
@@ -77,7 +77,7 @@ function do_list {
 
 function do_check_gosh {
     old_path=$PATH
-    if [ $ensure_prefix = "yes" ]; then
+    if [ $fixed_path = "yes" ]; then
         PATH=$prefix/bin
     else
         # We add $prefix/bin to path so that if gosh has been installed with
@@ -126,7 +126,7 @@ EOF
 prefix=$HOME
 desired_version=latest
 check_only=no
-ensure_prefix=no
+fixed_path=no
 force=no
 
 while test $# != 0
@@ -159,10 +159,10 @@ do
 
         --version)  desired_version=$optarg; $extra_shift ;;
         
-        --auto)          auto=yes ;;
-        --check-only)    check_only=yes ;;
-        --ensure-prefix) ensure_prefix=yes ;;
-        --force)         force=yes ;;
+        --auto)       auto=yes ;;
+        --check-only) check_only=yes ;;
+        --fixed-path) fixed_path=yes ;;
+        --force)      force=yes ;;
 
         --static)   staticlib=yes ;;
 
@@ -203,7 +203,7 @@ if [ ! -z "$gosh_path" ]; then
 fi
 
 if [ -z "$current_version" ]; then
-    if [ "$ensure_prefix" = "yes" ]; then
+    if [ "$fixed_path" = "yes" ]; then
         echo "Gauche is not found in $prefix."
     else
         echo "Gauche is not found on the system."

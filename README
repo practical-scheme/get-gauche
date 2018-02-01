@@ -6,7 +6,7 @@ SYNOPSIS
 
     get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
-                  [--ensure-prefix]
+                  [--fixed-path]
 
 DESCRIPTION
 
@@ -34,7 +34,7 @@ DESCRIPTION
     and the version requirement is satisfied, it won't attempt to install
     Gauche unless --force option is given.  If you want to ensure that
     desired Gauche is always installed under specified location, use
-    --ensure-prefix option.
+    --fixed-path option.
 
     If you don't have write permission in the install destination, the
     script needs to be invoked via sudo (not recommended).
@@ -55,7 +55,7 @@ OPTIONS
         install Gauche under the current directory.
         Equivalent to --prefix `pwd`.
 
-    --ensure-prefix
+    --fixed-path
         detect Gauche only under prefix (specified by --prefix, --system,
         --home or --current option).  By default, get-gauche.sh also checks
         under directories in PATH.
@@ -101,9 +101,9 @@ EXAMPLES
     during the build or installation process of your application as follows:
 
        $ get-gauche.sh --version 0.9.4 --prefix /app/dir/gauche \
-                       --ensure-prefix --auto
+                       --fixed-path --auto
 
-    The --ensure-prefix option ignores other Gauches installed under PATH
+    The --fixed-path option ignores other Gauches installed under PATH
     but only checks /app/dir/gauche.  If there's already 0.9.4 or later
     Gauche under that directory, you'll use it.  Otherwise that version
     is downloaded and installed there.
