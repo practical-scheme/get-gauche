@@ -93,7 +93,7 @@ function do_fetch_and_install {
     WORKDIR=`mktemp -d $CWD/tmp.XXXXXXXX`
 
     cd $WORKDIR
-    if ! curl -f -L -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
+    if ! curl -f -L --progress-bar -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
         echo "Failed URL:" $API/$desired_version.tgz
         exit 1
     fi
