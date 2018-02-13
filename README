@@ -16,7 +16,7 @@ DESCRIPTION
     install it.
 
     It can also be used with distributing Gauche applications.
-    In the application's configure or installation script, you can call
+    In the application's build or installation script, you can call
     get-gauche.sh, so that the user won't need to install Gauche separately.
 
     If --check-only option is given, the script only checks if Gauche
@@ -90,8 +90,8 @@ OPTIONS
 
     --update
         install Gauche under the same directory as the currently installed
-        one.  If no previous installation is found, use --prefix /usr/local,
-        as it is the default of Gauche's configure script.
+        one.  If no previous installation is found, get-gauche.sh prompts the
+        user to type the directory.
 
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version

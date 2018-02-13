@@ -55,8 +55,8 @@ Options:
 
     --update
         install Gauche under the same directory as the currently installed
-        one.  If no previous installation is found, use --prefix /usr/local,
-        as it is the default of Gauche's configure script.
+        one.  If no previous installation is found, get-gauche.sh prompts the
+        user to type the directory.
 
     --system
         install Gauche under system directory.
