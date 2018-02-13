@@ -4,9 +4,9 @@ NAME
 
 SYNOPSIS
 
-    get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
-                  [--version VERSION][--check-only][--force][--list]
-                  [--fixed-path]
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX]
+                  [--auto][--version VERSION][--check-only][--force][--list]
+                  [--fixed-path][--sudo]
 
 DESCRIPTION
 
@@ -23,7 +23,8 @@ DESCRIPTION
     has already installed but do not attempt to download and install.
 
     The installation location can be specified by --prefix, --system,
-    --home or --current option.  These options are mutually exclusive.
+    --home or --current option.  These options are mutually exclusive.  
+    When none of these options is given, --home is assumed.
 
     If --force options is given, the script directly download and install
     Gauche, regardless of whether Gauche is already installed or not.
@@ -36,8 +37,8 @@ DESCRIPTION
     desired Gauche is always installed under specified location, use
     --fixed-path option.
 
-    If you don't have write permission in the install destination, the
-    script needs to be invoked via sudo (not recommended).
+    If you don't have write permission in the install destination, use
+    --sudo option to run installation process via sudo.
 
 
 OPTIONS
@@ -76,6 +77,11 @@ OPTIONS
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
 
+    --sudo
+        invoke 'make install' via sudo.  Needed if you want to install
+        Gauche where you don't have write permissions.  You may be asked
+        to type your password by sudo.
+    
     --system
         install Gauche under system directory.
         Equivalent to --prefix /usr.

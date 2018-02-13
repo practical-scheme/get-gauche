@@ -12,7 +12,7 @@ function usage() {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
                   [--version VERSION][--check-only][--force][--list]
-                  [--fixed-path]
+                  [--fixed-path][--sudo]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -47,6 +47,11 @@ Options:
     --prefix PREFIX
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
+
+    --sudo
+        invoke 'make install' via sudo.  Needed if you want to install
+        Gauche where you don't have write permissions.  You may be asked
+        to type your password by sudo.
 
     --system
         install Gauche under system directory.
@@ -103,7 +108,7 @@ function do_fetch_and_install {
     ./configure --prefix=$prefix
     make -j
     make -s check
-    make install
+    $SUDO make install
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
@@ -128,6 +133,7 @@ desired_version=latest
 check_only=no
 fixed_path=no
 force=no
+SUDO=
 
 while test $# != 0
 do
@@ -164,7 +170,7 @@ do
         --fixed-path) fixed_path=yes ;;
         --force)      force=yes ;;
 
-        --static)   staticlib=yes ;;
+        --sudo)       SUDO=sudo ;;
 
         *) usage; exit 1;;
     esac
