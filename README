@@ -4,7 +4,7 @@ NAME
 
 SYNOPSIS
 
-    get-gauche.sh [--system|--home|--current|--prefix PREFIX]
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--sudo]
 
@@ -15,18 +15,20 @@ DESCRIPTION
     of Gauche is already installed, and if not, download the tarball and
     install it.
 
-    It can be also used with distributing Gauche applications.
+    It can also be used with distributing Gauche applications.
     In the application's configure or installation script, you can call
-    get-gauche.sh.
+    get-gauche.sh, so that the user won't need to install Gauche separately.
 
     If --check-only option is given, the script only checks if Gauche
     has already installed but do not attempt to download and install.
 
     The installation location can be specified by --prefix, --system,
-    --home or --current option.  These options are mutually exclusive.  
-    When none of these options is given, --home is assumed.
+    --home, --update or --current option.  These options are mutually 
+    exclusive.  When none of these options is given, get-gauche.sh prompts
+    the user to enter the location.  (The location must be specified
+    with --auto option.)
 
-    If --force options is given, the script directly download and install
+    If --force options is given, the script always download and install
     Gauche, regardless of whether Gauche is already installed or not.
 
     By default, installed Gauche is searched in $PATH as well as the
@@ -86,6 +88,11 @@ OPTIONS
         install Gauche under system directory.
         Equivalent to --prefix /usr.
 
+    --update
+        install Gauche under the same directory as the currently installed
+        one.  If no previous installation is found, use --prefix /usr/local,
+        as it is the default of Gauche's configure script.
+
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version
         string (e.g. `0.9.5'), or either `latest' or `snapshot'.  The word
@@ -102,7 +109,13 @@ EXAMPLES
 
        $ get-gauche.sh --home
 
-    2. You distribute a Gauche application, and always want to use Gauche 
+    2. You want to update installed Gauche to the latest snapshot.  The
+    existing Gauche is installed in the system directory so you need to
+    use sudo to install.
+
+       $ get-gauche.sh --update --sudo --version snapshot
+
+    3. You distribute a Gauche application, and always want to use Gauche 
     0.9.4 under application-specific directory.  You can run get-gauche.sh
     during the build or installation process of your application as follows:
 

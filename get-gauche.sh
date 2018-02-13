@@ -10,8 +10,8 @@ API=https://practical-scheme.net/gauche/releases
 function usage() {
     cat <<"EOF"
 Usage:
-    get-gauche.sh [--system|--home|--current|--prefix PREFIX][--auto]
-                  [--version VERSION][--check-only][--force][--list]
+    get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
+                  [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--sudo]
 Options:
     --auto
@@ -53,6 +53,11 @@ Options:
         Gauche where you don't have write permissions.  You may be asked
         to type your password by sudo.
 
+    --update
+        install Gauche under the same directory as the currently installed
+        one.  If no previous installation is found, use --prefix /usr/local,
+        as it is the default of Gauche's configure script.
+
     --system
         install Gauche under system directory.
         Equivalent to --prefix /usr.
@@ -80,7 +85,32 @@ function do_list {
     exit 0
 }
 
+function do_check_prefix {
+    if [ "$updating" = yes ]; then
+        gauche_config_path=`/usr/bin/which gauche-config ||:`
+        if [ ! -z "$gauche_config_path" ]; then
+            prefix=`gauche-config --prefix`
+        fi
+    fi
+    if [ -z "$prefix" -a "$auto" = yes ]; then
+        echo "Prefix must be specified with --auto option."
+        exit 1
+    fi
+    while [ -z "$prefix" ]; do
+        echo -n "Where to install Gauche? Enter directory name : "
+        read prefix
+    done
+
+    # ensure prefix is absolute
+    case $prefix in
+        /*) ;;
+        [A-Za-z]:*) ;;
+        *) prefix=`pwd`/$prefix ;;
+    esac
+}
+
 function do_check_gosh {
+    # We already have $prefix set
     old_path=$PATH
     if [ $fixed_path = "yes" ]; then
         PATH=$prefix/bin
@@ -128,7 +158,8 @@ EOF
 # main entry point
 #
 
-prefix=$HOME
+prefix=
+updating=
 desired_version=latest
 check_only=no
 fixed_path=no
@@ -162,6 +193,7 @@ do
         --home)     prefix=$HOME ;;
         --current)  prefix=`pwd` ;;
         --prefix)   prefix=$optarg; $extra_shift ;;
+        --update)   updating=yes ;;
 
         --version)  desired_version=$optarg; $extra_shift ;;
         
@@ -177,6 +209,7 @@ do
     shift
 done
 
+do_check_prefix
 do_check_gosh
 
 #
