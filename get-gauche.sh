@@ -100,7 +100,7 @@ function do_check_prefix {
         exit 1
     fi
     echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
-    read prefix
+    read prefix < /dev/tty
     if [ -z "$prefix" ]; then
         prefix=$default_prefix
     fi
@@ -271,7 +271,7 @@ fi
 if [ "$force" = yes -o "$need_install" = yes ]; then
     if [ "$auto" != yes ]; then
       echo -n "Install Gauche $desired_version under $prefix? [y/N]: "
-      read ans
+      read ans < /dev/tty
       case "$ans" in
           [yY]*) ;;
           *) exit 0;;
