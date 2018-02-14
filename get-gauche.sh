@@ -86,20 +86,24 @@ function do_list {
 }
 
 function do_check_prefix {
+    gauche_config_path=`/usr/bin/which gauche-config ||:`
+    if [ ! -z "$gauche_config_path" ]; then
+        default_prefix=`gauche-config --prefix`
+    else
+        default_prefix=/usr/local
+    fi
     if [ "$updating" = yes ]; then
-        gauche_config_path=`/usr/bin/which gauche-config ||:`
-        if [ ! -z "$gauche_config_path" ]; then
-            prefix=`gauche-config --prefix`
-        fi
+        prefix=$existing_prefix
     fi
     if [ -z "$prefix" -a "$auto" = yes ]; then
         echo "Prefix must be specified with --auto option."
         exit 1
     fi
-    while [ -z "$prefix" ]; do
-        echo -n "Where to install Gauche? Enter directory name : "
-        read prefix
-    done
+    echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
+    read prefix
+    if [ -z "$prefix" ]; then
+        prefix=$default_prefix
+    fi
 
     # ensure prefix is absolute
     case $prefix in

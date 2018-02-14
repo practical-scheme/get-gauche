@@ -103,19 +103,25 @@ OPTIONS
 
 EXAMPLES
 
-    1. You want to have the latest release of Gauche.  If the system
+    1. The simplest way to install the latest release.  The user will be
+    asked install location.  If there's already another Gauche installed,
+    its prefix is presented as the default install location.
+
+       $ get-gauche.sh
+
+    2. You want to have the latest release of Gauche.  If the system
     already has it, you can use it.  Otherwise, install under your home
     directory.
 
        $ get-gauche.sh --home
 
-    2. You want to update installed Gauche to the latest snapshot.  The
+    3. You want to update installed Gauche to the latest snapshot.  The
     existing Gauche is installed in the system directory so you need to
     use sudo to install.
 
        $ get-gauche.sh --update --sudo --version snapshot
 
-    3. You distribute a Gauche application, and always want to use Gauche 
+    4. You distribute a Gauche application, and always want to use Gauche 
     0.9.4 under application-specific directory.  You can run get-gauche.sh
     during the build or installation process of your application as follows:
 
