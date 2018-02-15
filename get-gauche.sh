@@ -95,16 +95,17 @@ function do_check_prefix {
     if [ "$updating" = yes ]; then
         prefix=$existing_prefix
     fi
-    if [ -z "$prefix" -a "$auto" = yes ]; then
-        echo "Prefix must be specified with --auto option."
-        exit 1
-    fi
-    echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
-    read prefix < /dev/tty
     if [ -z "$prefix" ]; then
-        prefix=$default_prefix
+        if [ "$auto" = yes ]; then
+            echo "Prefix must be specified with --auto option."
+            exit 1
+        fi
+        echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
+        read prefix < /dev/tty
+        if [ -z "$prefix" ]; then
+            prefix=$default_prefix
+        fi
     fi
-
     # ensure prefix is absolute
     case $prefix in
         /*) ;;
