@@ -112,6 +112,11 @@ function do_check_prefix {
         [A-Za-z]:*) ;;
         *) prefix=`pwd`/$prefix ;;
     esac
+
+    case `uname -a` in
+	CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
+	*) ;;
+    esac
 }
 
 function do_check_gosh {
@@ -130,7 +135,7 @@ function do_check_gosh {
 
 function do_fetch_and_install {
     CWD=`pwd`
-    WORKDIR=`mktemp -d $CWD/tmp.XXXXXXXX`
+    WORKDIR=`mktemp -d "$CWD/tmp.XXXXXXXX"`
 
     cd $WORKDIR
     if ! curl -f -L --progress-bar -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
@@ -138,10 +143,14 @@ function do_fetch_and_install {
         exit 1
     fi
     tar xf Gauche-$desired_version.tgz
+    rm Gauche-$desired_version.tgz
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
-    ./configure --prefix=$prefix
-    make -j
+    ./configure "--prefix=$prefix"
+    case `uname -a` in
+	CYGWIN*|MINGW*) make ;;
+	*)              make -j;;
+    esac
     make -s check
     $SUDO make install
 
@@ -151,7 +160,7 @@ function do_fetch_and_install {
 }
 
 function compare_version {
-    $gosh_path -b <<EOF
+    "$gosh_path" -b <<EOF
 (use gauche.version)
 (if (version>? "$1" "$2")
   (print "GT")
@@ -221,11 +230,11 @@ do_check_gosh
 # If --check-only, just report the check result and exit
 #
 if [ "$check_only" = yes ]; then
-    if [ -z $gosh_path ]; then
+    if [ -z "$gosh_path" ]; then
         echo "Gauche not found"
         exit 1
     else
-        echo "Found gosh in $gosh_path"
+        echo "Found gosh in '$gosh_path'"
         $gosh_version -V
         exit 0
     fi
@@ -243,7 +252,7 @@ esac
 # Compare with current version
 #
 if [ ! -z "$gosh_path" ]; then
-   current_version=`$gosh_path -E "print (gauche-version)" -Eexit`
+   current_version=`"$gosh_path" -E "print (gauche-version)" -Eexit`
 fi
 
 if [ -z "$current_version" ]; then
@@ -256,9 +265,9 @@ if [ -z "$current_version" ]; then
 else
     cmp=`compare_version $desired_version $current_version`
     case $cmp in
-        GT) echo "You have Gauche $current_version in $gosh_path."
+        GT) echo "You have Gauche $current_version in '$gosh_path'."
             need_install=yes;;
-        LE) echo "You already have Gauche $current_version in $gosh_path."
+        LE) echo "You already have Gauche $current_version in '$gosh_path'."
             if [ "$force" != yes ]; then
                 echo "No need to install.  (Use --force option to install $desired_version.)"
             fi
