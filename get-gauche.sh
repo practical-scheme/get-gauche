@@ -230,16 +230,17 @@ function do_fetch_and_install {
         MINGW*)
             case "$MSYSTEM" in
                 MINGW64|MINGW32)
-                    for dll in libwinpthread-1.dll; do
-                        if [ -f $mingwdir/bin/$dll ]; then
-                            cp $mingwdir/bin/$dll $prefix/bin
-                        fi
-                    done
+                    mingw_dll="libwinpthread-1.dll"
                     ;;
                 *)
-                    cp $mingwdir/bin/mingwm10.dll $prefix/bin
+                    mingw_dll="mingwm10.dll"
                     ;;
             esac
+            for dll in $mingw_dll; do
+                if [ -f $mingwdir/bin/$dll ]; then
+                    cp $mingwdir/bin/$dll $prefix/bin
+                fi
+            done
             ;;
     esac
 
