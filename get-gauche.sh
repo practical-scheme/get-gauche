@@ -85,6 +85,59 @@ function do_list {
     exit 0
 }
 
+function do_check_for_windows {
+    # check msys shell
+    case `uname -a` in
+        MSYS*)
+            echo "Msys shell is not supported. Please use Mingw shell."
+            echo "Aborting."
+            exit 1
+            ;;
+    esac
+    # check current path
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            if pwd | grep -q "[[:space:]]"; then
+                echo "Current path includes white space."
+                echo "Please use current path not including white space."
+                echo "Aborting."
+                exit 1
+            fi
+            ;;
+    esac
+    # check openssl
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            openssl=`/usr/bin/which openssl || :`
+            if echo "$openssl" | grep -q -E "/mingw(64|32)"; then
+                echo "$openssl causes make check hang-up."
+                echo "Please delete or rename this."
+                echo "Aborting."
+                exit 1
+            fi
+            ;;
+    esac
+    # get mingw directory
+    case `uname -a` in
+        MINGW*)
+            case "$MSYSTEM" in
+                MINGW64)
+                    mingwdir=${MINGWDIR:-/mingw64}
+                    ;;
+                MINGW32)
+                    mingwdir=${MINGWDIR:-/mingw32}
+                    ;;
+                *)
+                    #mingwdir=${MINGWDIR:-/mingw}
+                    echo 'Environment variable MSYSTEM is neither "MINGW32" or "MINGW64".'
+                    echo "Aborting."
+                    exit 1
+                    ;;
+            esac
+            ;;
+    esac
+}
+
 function do_check_prefix {
     gauche_config_path=`/usr/bin/which gauche-config ||:`
     if [ ! -z "$gauche_config_path" ]; then
@@ -114,8 +167,18 @@ function do_check_prefix {
     esac
 
     case `uname -a` in
-	CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
-	*) ;;
+        CYGWIN*|MINGW*)
+            prefix=`cygpath "$prefix"`
+            # check install path
+            if echo "$prefix" | grep -q "[[:space:]]"; then
+                echo "Install path includes white space."
+                echo "Please specify install path not including white space"
+                echo "and manually copy files to the real install path after"
+                echo "this script is finished."
+                echo "Aborting."
+                exit 1
+            fi
+            ;;
     esac
 }
 
@@ -146,13 +209,39 @@ function do_fetch_and_install {
     rm Gauche-$desired_version.tgz
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
-    ./configure "--prefix=$prefix"
     case `uname -a` in
-	CYGWIN*|MINGW*) make ;;
-	*)              make -j;;
+        CYGWIN*|MINGW*)
+            ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm
+            make
+            make -s check
+            make install
+            (cd src; make install-mingw)
+            make install-examples
+            ;;
+        *)
+            ./configure "--prefix=$prefix"
+            make -j
+            make -s check
+            $SUDO make install
+            ;;
     esac
-    make -s check
-    $SUDO make install
+    # copy mingw dll
+    case `uname -a` in
+        MINGW*)
+            case "$MSYSTEM" in
+                MINGW64|MINGW32)
+                    for dll in libwinpthread-1.dll; do
+                        if [ -f $mingwdir/bin/$dll ]; then
+                            cp $mingwdir/bin/$dll $prefix/bin
+                        fi
+                    done
+                    ;;
+                *)
+                    cp $mingwdir/bin/mingwm10.dll $prefix/bin
+                    ;;
+            esac
+            ;;
+    esac
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
@@ -223,6 +312,7 @@ do
     shift
 done
 
+do_check_for_windows
 do_check_prefix
 do_check_gosh
 
