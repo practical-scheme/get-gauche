@@ -238,7 +238,7 @@ function do_fetch_and_install {
             esac
             for dll in $mingw_dll; do
                 if [ -f $mingwdir/bin/$dll ]; then
-                    cp $mingwdir/bin/$dll $prefix/bin
+                    cp $mingwdir/bin/$dll "$prefix/bin"
                 fi
             done
             ;;
