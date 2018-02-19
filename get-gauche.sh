@@ -169,14 +169,20 @@ function do_check_prefix {
     case `uname -a` in
         CYGWIN*|MINGW*)
             prefix=`cygpath "$prefix"`
-            # check install path
-            if echo "$prefix" | grep -q "[[:space:]]"; then
-                echo "Install path includes white space."
-                echo "Please specify install path not including white space"
-                echo "and manually copy files to the real install path after"
-                echo "this script is finished."
+            # check write access
+            if [ ! -d "$prefix" ]; then
+                mkdir -p "$prefix"
+            fi
+            set +e
+            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
+            if [ $? -ne 0 ]; then
+                echo "Administrator rights might be required."
                 echo "Aborting."
                 exit 1
+            fi
+            set -e
+            if [ -f "$write_check" ]; then
+                rm -f "$write_check"
             fi
             ;;
     esac
@@ -209,6 +215,29 @@ function do_fetch_and_install {
     rm Gauche-$desired_version.tgz
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
+
+    # patch to source
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            # add libdir setting
+            patch_file1=tools/gc-configure.gnu-gauche.in
+            if [ -f $patch_file1 ]; then
+                if ! grep -q -e '--libdir=/usr/local/lib' $patch_file1; then
+                    cp $patch_file1 $patch_file1.bak
+                    sed -e '/CPPFLAGS=/i \    --libdir=/usr/local/lib \\' $patch_file1.bak > $patch_file1
+                fi
+            fi
+            # add double quotes
+            patch_file2=lib/Makefile.in
+            if [ -f $patch_file2 ]; then
+                if ! grep -q -e '\"\$(exec_prefix)/bin/gosh\"' $patch_file2; then
+                    cp $patch_file2 $patch_file2.bak
+                    sed -e 's@\($(exec_prefix)/bin/gosh\)@\"\1\"@' $patch_file2.bak > $patch_file2
+                fi
+            fi
+            ;;
+    esac
+
     case `uname -a` in
         CYGWIN*|MINGW*)
             ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm
@@ -225,6 +254,7 @@ function do_fetch_and_install {
             $SUDO make install
             ;;
     esac
+
     # copy mingw dll
     case `uname -a` in
         MINGW*)
