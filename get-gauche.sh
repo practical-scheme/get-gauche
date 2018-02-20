@@ -85,7 +85,7 @@ function do_list {
     exit 0
 }
 
-function do_check_for_windows {
+function do_check_for_windows1 {
     # check msys shell
     case `uname -a` in
         MSYS*)
@@ -138,6 +138,59 @@ function do_check_for_windows {
     esac
 }
 
+function do_check_for_windows2 {
+    # check write access
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            if [ ! -d "$prefix" ]; then
+                mkdir -p "$prefix"
+            fi
+            set +e
+            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
+            if [ $? -ne 0 ]; then
+                echo "Administrator rights might be required."
+                echo "Aborting."
+                exit 1
+            fi
+            set -e
+            if [ -f "$write_check" ]; then
+                rm -f "$write_check"
+            fi
+            ;;
+    esac
+}
+
+function compare_version {
+    "$gosh_path" -b <<EOF
+(use gauche.version)
+(if (version>? "$1" "$2")
+  (print "GT")
+  (print "LE"))
+EOF
+}
+
+function do_check_for_windows3 {
+    # check install path
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            cmp=`compare_version $desired_version 0.9.6_pre3`
+            case $cmp in
+                LE)
+                    if echo "$prefix" | grep -q "[[:space:]]"; then
+                        echo "This version of Gauche can't be installed to the path"
+                        echo "including white space directly."
+                        echo "Please specify install path not including white space"
+                        echo "and manually copy files to the real install path after"
+                        echo "this script is finished."
+                        echo "Aborting."
+                        exit 1
+                    fi
+                    ;;
+            esac
+            ;;
+    esac
+}
+
 function do_check_prefix {
     gauche_config_path=`/usr/bin/which gauche-config ||:`
     if [ ! -z "$gauche_config_path" ]; then
@@ -167,24 +220,8 @@ function do_check_prefix {
     esac
 
     case `uname -a` in
-        CYGWIN*|MINGW*)
-            prefix=`cygpath "$prefix"`
-            # check write access
-            if [ ! -d "$prefix" ]; then
-                mkdir -p "$prefix"
-            fi
-            set +e
-            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
-            if [ $? -ne 0 ]; then
-                echo "Administrator rights might be required."
-                echo "Aborting."
-                exit 1
-            fi
-            set -e
-            if [ -f "$write_check" ]; then
-                rm -f "$write_check"
-            fi
-            ;;
+        CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
+        *) ;;
     esac
 }
 
@@ -202,6 +239,45 @@ function do_check_gosh {
     PATH=$old_path
 }
 
+function do_patch_to_source {
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            # add libdir setting
+            patch_file=tools/gc-configure.gnu-gauche.in
+            if [ -f $patch_file ]; then
+                if ! grep -q -e '--libdir=/usr/local/lib' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e '/CPPFLAGS=/i \    --libdir=/usr/local/lib \\' $patch_file.bak > $patch_file
+                fi
+            fi
+            # add double quotes
+            patch_file=lib/Makefile.in
+            if [ -f $patch_file ]; then
+                if ! grep -q -e '\"\$(exec_prefix)/bin/gosh\"' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e 's@\($(exec_prefix)/bin/gosh\)@\"\1\"@' $patch_file.bak > $patch_file
+                fi
+            fi
+            # change gosh
+            patch_file=src/Makefile.in
+            if [ -f $patch_file ]; then
+                if ! grep -q -e './gosh -ftest \$(srcdir)/gen-staticinit.scm' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e 's@$(BUILD_GOSH) \($(srcdir)/gen-staticinit.scm\)@./gosh -ftest \1@' $patch_file.bak > $patch_file
+                fi
+            fi
+            # skip standalone test
+            patch_file=test/scripts.scm
+            if [ -f $patch_file ]; then
+                if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e 's@\((wrap-with-test-directory static-test-1)\)@;\1@' $patch_file.bak > $patch_file
+                fi
+            fi
+            ;;
+    esac
+}
+
 function do_fetch_and_install {
     CWD=`pwd`
     WORKDIR=`mktemp -d "$CWD/tmp.XXXXXXXX"`
@@ -216,27 +292,7 @@ function do_fetch_and_install {
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
 
-    # patch to source
-    case `uname -a` in
-        CYGWIN*|MINGW*)
-            # add libdir setting
-            patch_file1=tools/gc-configure.gnu-gauche.in
-            if [ -f $patch_file1 ]; then
-                if ! grep -q -e '--libdir=/usr/local/lib' $patch_file1; then
-                    cp $patch_file1 $patch_file1.bak
-                    sed -e '/CPPFLAGS=/i \    --libdir=/usr/local/lib \\' $patch_file1.bak > $patch_file1
-                fi
-            fi
-            # add double quotes
-            patch_file2=lib/Makefile.in
-            if [ -f $patch_file2 ]; then
-                if ! grep -q -e '\"\$(exec_prefix)/bin/gosh\"' $patch_file2; then
-                    cp $patch_file2 $patch_file2.bak
-                    sed -e 's@\($(exec_prefix)/bin/gosh\)@\"\1\"@' $patch_file2.bak > $patch_file2
-                fi
-            fi
-            ;;
-    esac
+    do_patch_to_source
 
     case `uname -a` in
         CYGWIN*|MINGW*)
@@ -277,15 +333,6 @@ function do_fetch_and_install {
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
     echo "################################################################"
-}
-
-function compare_version {
-    "$gosh_path" -b <<EOF
-(use gauche.version)
-(if (version>? "$1" "$2")
-  (print "GT")
-  (print "LE"))
-EOF
 }
 
 ################################################################
@@ -343,8 +390,9 @@ do
     shift
 done
 
-do_check_for_windows
+do_check_for_windows1
 do_check_prefix
+do_check_for_windows2
 do_check_gosh
 
 #
@@ -368,6 +416,8 @@ case $desired_version in
     latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
+
+do_check_for_windows3
 
 #
 # Compare with current version
