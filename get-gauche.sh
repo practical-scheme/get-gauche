@@ -242,7 +242,7 @@ function do_check_gosh {
 function do_patch_to_source {
     case `uname -a` in
         CYGWIN*|MINGW*)
-            # add libdir setting
+            # add libdir setting to avoid build error on install path
             patch_file=tools/gc-configure.gnu-gauche.in
             if [ -f $patch_file ]; then
                 if ! grep -q -e '--libdir=/usr/local/lib' $patch_file; then
@@ -250,7 +250,7 @@ function do_patch_to_source {
                     sed -e '/CPPFLAGS=/i \    --libdir=/usr/local/lib \\' $patch_file.bak > $patch_file
                 fi
             fi
-            # add double quotes
+            # add double quotes to avoid build error on install path
             patch_file=lib/Makefile.in
             if [ -f $patch_file ]; then
                 if ! grep -q -e '\"\$(exec_prefix)/bin/gosh\"' $patch_file; then
@@ -258,15 +258,15 @@ function do_patch_to_source {
                     sed -e 's@\($(exec_prefix)/bin/gosh\)@\"\1\"@' $patch_file.bak > $patch_file
                 fi
             fi
-            # change gosh
-            patch_file=src/Makefile.in
+            # add preload module to avoid load error in gen-staticinit
+            patch_file=src/preload.scm
             if [ -f $patch_file ]; then
-                if ! grep -q -e './gosh -ftest \$(srcdir)/gen-staticinit.scm' $patch_file; then
+                if ! grep -q -e '(use gauche\.threads)' $patch_file; then
                     cp $patch_file $patch_file.bak
-                    sed -e 's@$(BUILD_GOSH) \($(srcdir)/gen-staticinit.scm\)@./gosh -ftest \1@' $patch_file.bak > $patch_file
+                    sed -e '/(use srfi-1)/i (use gauche.threads)' $patch_file.bak > $patch_file
                 fi
             fi
-            # skip standalone test
+            # skip standalone test to avoid link error in MinGW 32bit
             patch_file=test/scripts.scm
             if [ -f $patch_file ]; then
                 if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
