@@ -170,6 +170,20 @@ EOF
 }
 
 function do_check_for_windows3 {
+    # check version
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            cmp=`compare_version $desired_version 0.9.4`
+            case $cmp in
+                LE)
+                    echo "On Windows, this script doesn't support Gauche version"
+                    echo "0.9.4 or earlier."
+                    echo "Aborting."
+                    exit 1
+                    ;;
+            esac
+            ;;
+    esac
     # check install path
     case `uname -a` in
         CYGWIN*|MINGW*)
