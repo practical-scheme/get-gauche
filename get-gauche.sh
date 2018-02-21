@@ -85,6 +85,15 @@ function do_list {
     exit 0
 }
 
+function compare_version {
+    "$gosh_path" -b <<EOF
+(use gauche.version)
+(if (version>? "$1" "$2")
+  (print "GT")
+  (print "LE"))
+EOF
+}
+
 function do_check_for_windows1 {
     # check msys shell
     case `uname -a` in
@@ -139,37 +148,6 @@ function do_check_for_windows1 {
 }
 
 function do_check_for_windows2 {
-    # check write access
-    case `uname -a` in
-        CYGWIN*|MINGW*)
-            if [ ! -d "$prefix" ]; then
-                mkdir -p "$prefix"
-            fi
-            set +e
-            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
-            if [ $? -ne 0 ]; then
-                echo "Administrator rights might be required."
-                echo "Aborting."
-                exit 1
-            fi
-            set -e
-            if [ -f "$write_check" ]; then
-                rm -f "$write_check"
-            fi
-            ;;
-    esac
-}
-
-function compare_version {
-    "$gosh_path" -b <<EOF
-(use gauche.version)
-(if (version>? "$1" "$2")
-  (print "GT")
-  (print "LE"))
-EOF
-}
-
-function do_check_for_windows3 {
     # check version
     case `uname -a` in
         CYGWIN*|MINGW*)
@@ -201,6 +179,25 @@ function do_check_for_windows3 {
                     fi
                     ;;
             esac
+            ;;
+    esac
+    # check write permission
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            if [ ! -d "$prefix" ]; then
+                mkdir -p "$prefix"
+            fi
+            set +e
+            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
+            if [ $? -ne 0 ]; then
+                echo "Administrator rights might be required."
+                echo "Aborting."
+                exit 1
+            fi
+            set -e
+            if [ -f "$write_check" ]; then
+                rm -f "$write_check"
+            fi
             ;;
     esac
 }
@@ -406,7 +403,6 @@ done
 
 do_check_for_windows1
 do_check_prefix
-do_check_for_windows2
 do_check_gosh
 
 #
@@ -418,7 +414,7 @@ if [ "$check_only" = yes ]; then
         exit 1
     else
         echo "Found gosh in '$gosh_path'"
-        $gosh_version -V
+        "$gosh_path" -V
         exit 0
     fi
 fi
@@ -431,7 +427,7 @@ case $desired_version in
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
 
-do_check_for_windows3
+do_check_for_windows2
 
 #
 # Compare with current version
