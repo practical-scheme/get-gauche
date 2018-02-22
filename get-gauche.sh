@@ -169,7 +169,7 @@ function do_check_for_windows2 {
             case $cmp in
                 LE)
                     if echo "$prefix" | grep -q "[[:space:]]"; then
-                        echo "This version of Gauche can't be installed to the path"
+                        echo "Gauche version $desired_version can't be installed to the path"
                         echo "including white space directly."
                         echo "Please specify install path not including white space"
                         echo "and manually copy files to the real install path after"
@@ -427,8 +427,6 @@ case $desired_version in
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
 
-do_check_for_windows2
-
 #
 # Compare with current version
 #
@@ -451,10 +449,13 @@ else
         LE) echo "You already have Gauche $current_version in '$gosh_path'."
             if [ "$force" != yes ]; then
                 echo "No need to install.  (Use --force option to install $desired_version.)"
+                exit 0
             fi
             ;;
     esac
 fi
+
+do_check_for_windows2
 
 #
 # Proceed to install
