@@ -12,7 +12,7 @@ function usage() {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--sudo]
+                  [--fixed-path][--keep-temp][--sudo]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -39,6 +39,9 @@ Options:
     --home
         install Gauche under the user's home directory.
         Equivalent to --preifx $HOME.
+
+    --keep-temp
+        Do not remove temporary directory (for debug).
 
     --list
         show valid Gauche versions for --version option and exit.  No
@@ -73,8 +76,10 @@ EOF
 }
 
 function cleanup {
-    if [ -d "$WORKDIR" ]; then
-        rm -rf "$WORKDIR"
+    if [ "$keep_temp" != yes ]; then
+        if [ -d "$WORKDIR" ]; then
+            rm -rf "$WORKDIR"
+        fi
     fi
 }
 
@@ -135,7 +140,8 @@ function do_check_gosh {
 
 function do_fetch_and_install {
     CWD=`pwd`
-    WORKDIR=`mktemp -d "$CWD/tmp.XXXXXXXX"`
+    DATETIME=`date +%Y%m%d_%H%M%S`
+    WORKDIR=`mktemp -d "$CWD/tmp$DATETIME.XXXXXXXX"`
 
     cd $WORKDIR
     if ! curl -f -L --progress-bar -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
@@ -178,6 +184,7 @@ desired_version=latest
 check_only=no
 fixed_path=no
 force=no
+keep_temp=no
 SUDO=
 
 while test $# != 0
@@ -215,6 +222,7 @@ do
         --check-only) check_only=yes ;;
         --fixed-path) fixed_path=yes ;;
         --force)      force=yes ;;
+        --keep-temp)  keep_temp=yes ;;
 
         --sudo)       SUDO=sudo ;;
 
