@@ -12,7 +12,7 @@ function usage() {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--keep-temp][--sudo]
+                  [--fixed-path][--keep-builddir][--sudo]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -40,8 +40,12 @@ Options:
         install Gauche under the user's home directory.
         Equivalent to --preifx $HOME.
 
-    --keep-temp
-        Do not remove temporary directory (for debug).
+    --keep-builddir
+        Do not remove build directory after installation.  Useful for
+        troubleshooting.   Build directory is created under the
+        current directory with a name 'build-YYYYMMDD_hhmmss.xxxxxx'
+        where 'YYYYMMDD_hhmmss' is the timestamp and 'xxxxxx' is a random
+        string.
 
     --list
         show valid Gauche versions for --version option and exit.  No
@@ -76,7 +80,7 @@ EOF
 }
 
 function cleanup {
-    if [ "$keep_temp" != yes ]; then
+    if [ "$keep_builddir" != yes ]; then
         if [ -d "$WORKDIR" ]; then
             rm -rf "$WORKDIR"
         fi
@@ -143,7 +147,7 @@ function do_check_gosh {
 function do_fetch_and_install {
     CWD=`pwd`
     DATETIME=`date +%Y%m%d_%H%M%S`
-    WORKDIR=`mktemp -d "$CWD/tmp$DATETIME.XXXXXXXX"`
+    WORKDIR=`mktemp -d "$CWD/build-$DATETIME.XXXXXXXX"`
 
     cd $WORKDIR
     if ! curl -f -L --progress-bar -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
@@ -186,7 +190,7 @@ desired_version=latest
 check_only=no
 fixed_path=no
 force=no
-keep_temp=no
+keep_builddir=no
 SUDO=
 
 while test $# != 0
@@ -220,11 +224,11 @@ do
 
         --version)  desired_version=$optarg; $extra_shift ;;
         
-        --auto)       auto=yes ;;
-        --check-only) check_only=yes ;;
-        --fixed-path) fixed_path=yes ;;
-        --force)      force=yes ;;
-        --keep-temp)  keep_temp=yes ;;
+        --auto)          auto=yes ;;
+        --check-only)    check_only=yes ;;
+        --fixed-path)    fixed_path=yes ;;
+        --force)         force=yes ;;
+        --keep-builddir) keep_builddir=yes ;;
 
         --sudo)       SUDO=sudo ;;
 
