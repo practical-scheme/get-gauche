@@ -235,7 +235,7 @@ if [ "$check_only" = yes ]; then
         exit 1
     else
         echo "Found gosh in '$gosh_path'"
-        $gosh_version -V
+        "$gosh_path" -V
         exit 0
     fi
 fi
