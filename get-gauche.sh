@@ -89,8 +89,10 @@ function do_check_prefix {
     gauche_config_path=`/usr/bin/which gauche-config ||:`
     if [ ! -z "$gauche_config_path" ]; then
         default_prefix=`gauche-config --prefix`
+        existing_prefix=$default_prefix
     else
         default_prefix=/usr/local
+        existing_prefix=
     fi
     if [ "$updating" = yes ]; then
         prefix=$existing_prefix
