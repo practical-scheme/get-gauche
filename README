@@ -6,7 +6,7 @@ SYNOPSIS
 
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--sudo]
+                  [--fixed-path][--keep-builddir][--sudo]
 
 DESCRIPTION
 
@@ -70,6 +70,13 @@ OPTIONS
     --home
         install Gauche under the user's home directory.
         Equivalent to --preifx $HOME.
+
+    --keep-builddir
+        Do not remove build directory after installation.  Useful for
+        troubleshooting.   Build directory is created under the
+        current directory with a name 'build-YYYYMMDD_hhmmss.xxxxxx'
+        where 'YYYYMMDD_hhmmss' is the timestamp and 'xxxxxx' is a random
+        string.
 
     --list
         show valid Gauche versions for --version option and exit.  No
