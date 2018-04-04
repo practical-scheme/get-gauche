@@ -20,7 +20,7 @@ DESCRIPTION
     get-gauche.sh, so that the user won't need to install Gauche separately.
 
     If --check-only option is given, the script only checks if Gauche
-    has already installed but do not attempt to download and install.
+    has already installed but does not attempt to download and install.
 
     The installation location can be specified by --prefix, --system,
     --home, --update or --current option.  These options are mutually 
@@ -28,7 +28,7 @@ DESCRIPTION
     the user to enter the location.  (The location must be specified
     with --auto option.)
 
-    If --force options is given, the script always download and install
+    If --force options is given, the script always downloads and installs
     Gauche, regardless of whether Gauche is already installed or not.
 
     By default, installed Gauche is searched in $PATH as well as the
@@ -39,7 +39,7 @@ DESCRIPTION
     desired Gauche is always installed under specified location, use
     --fixed-path option.
 
-    If you don't have write permission in the install destination, use
+    If you don't have write permissions in the install destination, use
     --sudo option to run installation process via sudo.
 
 
@@ -55,7 +55,8 @@ OPTIONS
         and install.
 
     --current
-        install Gauche under the current directory.
+        install Gauche under the current directory (e.g. ./bin/gosh for
+        executable, ./{lib,share}/gauche-x.x/ for libraries, etc.)
         Equivalent to --prefix `pwd`.
 
     --fixed-path
@@ -68,7 +69,8 @@ OPTIONS
         install the specified version of Gauche.
 
     --home
-        install Gauche under the user's home directory.
+        install Gauche under the user's home directory (e.g. $HOME/bin/gosh
+        for executable, $HOME/{lib,share}/gauche-x.x/ for libraries, etc.)
         Equivalent to --preifx $HOME.
 
     --keep-builddir
@@ -84,7 +86,7 @@ OPTIONS
 
     --prefix PREFIX
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
-        binary libraries are in PREFIX/lib, etc.
+        binary libraries are in PREFIX/{lib,share}, etc.
 
     --sudo
         invoke 'make install' via sudo.  Needed if you want to install
