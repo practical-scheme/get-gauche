@@ -7,7 +7,7 @@ API=https://practical-scheme.net/gauche/releases
 # Ensure Gauche availability
 # https://github.com/shirok/get-gauche/README
 
-function usage() {
+function usage {
     cat <<"EOF"
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
@@ -142,6 +142,34 @@ function do_check_gosh {
     fi
     gosh_path=`/usr/bin/which gosh || :`
     PATH=$old_path
+}
+
+function check_destination {
+    path=$1
+    if [ -d $path ]; then
+        if [ ! -w $path ]; then
+            echo "NOTE: You don't have the write permission of the install destination ($prefix)."
+            if [ x$auto = xyes ]; then
+                echo "Use --sudo option to override permissions."
+                exit 1
+            else
+                echo -n "Do you want to run 'make install' via sudo? [y/N]: "
+                read ans < /dev/tty
+                case "$ans" in
+                    [yY]*) ;;
+                    *) echo "Use --sudo option to override permissions."
+                       exit 1;;
+                esac
+                echo "*** You may be asked your password by sudo before installation."
+                SUDO=sudo
+            fi
+        fi
+    elif [ -e $path ]; then
+        echo "Won't be able to install, because $path is in the way."
+        exit 1
+    else
+        check_destination `dirname $path`
+    fi
 }
 
 function do_fetch_and_install {
@@ -300,6 +328,9 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
           [yY]*) ;;
           *) exit 0;;
       esac
+    fi
+    if [ x$SUDO = x ]; then
+        check_destination $prefix
     fi
     echo "Start installing Gauche $desired_version..."
     do_fetch_and_install

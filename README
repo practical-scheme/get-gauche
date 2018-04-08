@@ -39,9 +39,9 @@ DESCRIPTION
     desired Gauche is always installed under specified location, use
     --fixed-path option.
 
-    If you don't have write permission in the install destination, use
-    --sudo option to run installation process via sudo.
-
+    If you don't have write permission in the install destination,
+    get-gauche.sh would use sudo to install Gauche (after asking you). 
+    You can use --sudo option to omit its asking.
 
 OPTIONS
 
