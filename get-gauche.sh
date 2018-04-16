@@ -221,6 +221,11 @@ force=no
 keep_builddir=no
 SUDO=
 
+if ! curl --version > /dev/null 2>&1; then
+    echo "Can't find curl on this machine.  Please install it and run get-gauche.sh again."
+    exit 1
+fi
+
 while test $# != 0
 do
     case $1 in
