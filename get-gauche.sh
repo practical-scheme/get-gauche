@@ -94,6 +94,126 @@ function do_list {
     exit 0
 }
 
+function compare_version {
+    "$gosh_path" -b <<EOF
+(use gauche.version)
+(if (version>? "$1" "$2")
+  (print "GT")
+  (print "LE"))
+EOF
+}
+
+function do_check_for_windows1 {
+    # check msys shell
+    case `uname -a` in
+        MSYS*)
+            echo "Msys shell is not supported. Please use Mingw shell."
+            echo "Aborting."
+            exit 1
+            ;;
+    esac
+    # check current path
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            if pwd | grep -q "[[:space:]]"; then
+                echo "Current path includes white space."
+                echo "Please use current path not including white space."
+                echo "Aborting."
+                exit 1
+            fi
+            ;;
+    esac
+    # check openssl
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            openssl=`/usr/bin/which openssl || :`
+            if echo "$openssl" | grep -q -E "/mingw(64|32)"; then
+                echo "$openssl causes make check hang-up."
+                echo "Please delete or rename this."
+                echo "Aborting."
+                exit 1
+            fi
+            ;;
+    esac
+    # get mingw directory
+    case `uname -a` in
+        MINGW*)
+            case "$MSYSTEM" in
+                MINGW64)
+                    mingwdir=${MINGWDIR:-/mingw64}
+                    ;;
+                MINGW32)
+                    mingwdir=${MINGWDIR:-/mingw32}
+                    ;;
+                *)
+                    #mingwdir=${MINGWDIR:-/mingw}
+                    echo 'Environment variable MSYSTEM is neither "MINGW32" or "MINGW64".'
+                    echo "Aborting."
+                    exit 1
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+function do_check_for_windows2 {
+    # check version
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            cmp=`compare_version $desired_version 0.9.4`
+            case $cmp in
+                LE)
+                    echo "On Windows, this script doesn't support Gauche version"
+                    echo "0.9.4 or earlier."
+                    echo "Aborting."
+                    exit 1
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+function do_check_for_windows3 {
+    # check install path
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            cmp=`compare_version $desired_version 0.9.6_pre3`
+            case $cmp in
+                LE)
+                    if echo "$prefix" | grep -q "[[:space:]]"; then
+                        echo "Gauche version $desired_version can't be installed to the path"
+                        echo "including white space directly."
+                        echo "Please specify install path not including white space"
+                        echo "and manually copy files to the real install path after"
+                        echo "this script is finished."
+                        echo "Aborting."
+                        exit 1
+                    fi
+                    ;;
+            esac
+            ;;
+    esac
+    # check write permission
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            if [ ! -d "$prefix" ]; then
+                mkdir -p "$prefix"
+            fi
+            set +e
+            write_check=`mktemp "$prefix/writechk.XXXXXXXX"`
+            if [ $? -ne 0 ]; then
+                echo "Administrator rights might be required."
+                echo "Aborting."
+                exit 1
+            fi
+            set -e
+            if [ -f "$write_check" ]; then
+                rm -f "$write_check"
+            fi
+            ;;
+    esac
+}
+
 function do_check_prefix {
     gauche_config_path=`/usr/bin/which gauche-config ||:`
     if [ ! -z "$gauche_config_path" ]; then
@@ -172,6 +292,76 @@ function check_destination {
     fi
 }
 
+function do_patch_to_source {
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            # add libdir setting to avoid build error on install path
+            patch_file=tools/gc-configure.gnu-gauche.in
+            if [ -f $patch_file ]; then
+                if ! grep -q -e '--libdir=/usr/local/lib' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e '/CPPFLAGS=/i \    --libdir=/usr/local/lib \\' $patch_file.bak > $patch_file
+                fi
+            fi
+            # add double quotes to avoid build error on install path
+            patch_file=lib/Makefile.in
+            if [ -f $patch_file ]; then
+                if ! grep -q -e '\"\$(exec_prefix)/bin/gosh\"' $patch_file; then
+                    cp $patch_file $patch_file.bak
+                    sed -e 's@\($(exec_prefix)/bin/gosh\)@\"\1\"@' $patch_file.bak > $patch_file
+                fi
+            fi
+            # add preload module to avoid load error in gen-staticinit
+            cmp=`compare_version $desired_version 0.9.6_pre6`
+            case $cmp in
+                LE)
+                    patch_file=src/preload.scm
+                    if [ -f $patch_file ]; then
+                        if ! grep -q -e '(use gauche\.threads)' $patch_file; then
+                            cp $patch_file $patch_file.bak
+                            sed -e '/(use srfi-1)/i (use gauche.threads)' $patch_file.bak > $patch_file
+                        fi
+                    fi
+                    ;;
+            esac
+            # skip standalone test to avoid link error in MinGW 32bit
+            cmp=`compare_version $desired_version 0.9.6_pre6`
+            case $cmp in
+                LE)
+                    patch_file=test/scripts.scm
+                    if [ -f $patch_file ]; then
+                        if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
+                            cp $patch_file $patch_file.bak
+                            sed -e 's@\((wrap-with-test-directory static-test-1)\)@;\1@' $patch_file.bak > $patch_file
+                        fi
+                    fi
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+function do_copy_library_files {
+    # copy mingw dll
+    case `uname -a` in
+        MINGW*)
+            case "$MSYSTEM" in
+                MINGW64|MINGW32)
+                    mingw_dll="libwinpthread-1.dll"
+                    ;;
+                *)
+                    mingw_dll="mingwm10.dll"
+                    ;;
+            esac
+            for dll in $mingw_dll; do
+                if [ -f $mingwdir/bin/$dll ]; then
+                    cp $mingwdir/bin/$dll "$prefix/bin"
+                fi
+            done
+            ;;
+    esac
+}
+
 function do_fetch_and_install {
     CWD=`pwd`
     DATETIME=`date +%Y%m%d_%H%M%S`
@@ -186,26 +376,31 @@ function do_fetch_and_install {
     rm Gauche-$desired_version.tgz
     # The actual directory name may differ when $version is latest or snapshot
     cd Gauche-*
-    ./configure "--prefix=$prefix"
+
+    do_patch_to_source
+
     case `uname -a` in
-	CYGWIN*|MINGW*) make ;;
-	*)              make -j;;
+        CYGWIN*|MINGW*)
+            ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm
+            make
+            make -s check
+            make install
+            (cd src; make install-mingw)
+            make install-examples
+            ;;
+        *)
+            ./configure "--prefix=$prefix"
+            make -j
+            make -s check
+            $SUDO make install
+            ;;
     esac
-    make -s check
-    $SUDO make install
+
+    do_copy_library_files
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
     echo "################################################################"
-}
-
-function compare_version {
-    "$gosh_path" -b <<EOF
-(use gauche.version)
-(if (version>? "$1" "$2")
-  (print "GT")
-  (print "LE"))
-EOF
 }
 
 ################################################################
@@ -270,6 +465,7 @@ do
     shift
 done
 
+do_check_for_windows1
 do_check_prefix
 do_check_gosh
 
@@ -294,6 +490,7 @@ case $desired_version in
     latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
+do_check_for_windows2
 
 #
 # Compare with current version
@@ -334,9 +531,16 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
           *) exit 0;;
       esac
     fi
-    if [ x$SUDO = x ]; then
-        check_destination $prefix
-    fi
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            do_check_for_windows3
+            ;;
+        *)
+            if [ x$SUDO = x ]; then
+                check_destination $prefix
+            fi
+            ;;
+    esac
     echo "Start installing Gauche $desired_version..."
     do_fetch_and_install
 fi
