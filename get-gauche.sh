@@ -7,7 +7,7 @@ API=https://practical-scheme.net/gauche/releases
 # Ensure Gauche availability
 # https://github.com/shirok/get-gauche/README
 
-function usage() {
+function usage {
     cat <<"EOF"
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
@@ -171,6 +171,9 @@ function do_check_for_windows2 {
             esac
             ;;
     esac
+}
+
+function do_check_for_windows3 {
     # check install path
     case `uname -a` in
         CYGWIN*|MINGW*)
@@ -242,8 +245,8 @@ function do_check_prefix {
     esac
 
     case `uname -a` in
-        CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
-        *) ;;
+	CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
+	*) ;;
     esac
 }
 
@@ -259,6 +262,34 @@ function do_check_gosh {
     fi
     gosh_path=`/usr/bin/which gosh || :`
     PATH=$old_path
+}
+
+function check_destination {
+    path=$1
+    if [ -d $path ]; then
+        if [ ! -w $path ]; then
+            echo "NOTE: You don't have the write permission of the install destination ($prefix)."
+            if [ x$auto = xyes ]; then
+                echo "Use --sudo option to override permissions."
+                exit 1
+            else
+                echo -n "Do you want to run 'make install' via sudo? [y/N]: "
+                read ans < /dev/tty
+                case "$ans" in
+                    [yY]*) ;;
+                    *) echo "Use --sudo option to override permissions."
+                       exit 1;;
+                esac
+                echo "*** You may be asked your password by sudo before installation."
+                SUDO=sudo
+            fi
+        fi
+    elif [ -e $path ]; then
+        echo "Won't be able to install, because $path is in the way."
+        exit 1
+    else
+        check_destination `dirname $path`
+    fi
 }
 
 function do_patch_to_source {
@@ -281,21 +312,52 @@ function do_patch_to_source {
                 fi
             fi
             # add preload module to avoid load error in gen-staticinit
-            patch_file=src/preload.scm
-            if [ -f $patch_file ]; then
-                if ! grep -q -e '(use gauche\.threads)' $patch_file; then
-                    cp $patch_file $patch_file.bak
-                    sed -e '/(use srfi-1)/i (use gauche.threads)' $patch_file.bak > $patch_file
-                fi
-            fi
+            cmp=`compare_version $desired_version 0.9.6_pre6`
+            case $cmp in
+                LE)
+                    patch_file=src/preload.scm
+                    if [ -f $patch_file ]; then
+                        if ! grep -q -e '(use gauche\.threads)' $patch_file; then
+                            cp $patch_file $patch_file.bak
+                            sed -e '/(use srfi-1)/i (use gauche.threads)' $patch_file.bak > $patch_file
+                        fi
+                    fi
+                    ;;
+            esac
             # skip standalone test to avoid link error in MinGW 32bit
-            patch_file=test/scripts.scm
-            if [ -f $patch_file ]; then
-                if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
-                    cp $patch_file $patch_file.bak
-                    sed -e 's@\((wrap-with-test-directory static-test-1)\)@;\1@' $patch_file.bak > $patch_file
+            cmp=`compare_version $desired_version 0.9.6_pre6`
+            case $cmp in
+                LE)
+                    patch_file=test/scripts.scm
+                    if [ -f $patch_file ]; then
+                        if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
+                            cp $patch_file $patch_file.bak
+                            sed -e 's@\((wrap-with-test-directory static-test-1)\)@;\1@' $patch_file.bak > $patch_file
+                        fi
+                    fi
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+function do_copy_library_files {
+    # copy mingw dll
+    case `uname -a` in
+        MINGW*)
+            case "$MSYSTEM" in
+                MINGW64|MINGW32)
+                    mingw_dll="libwinpthread-1.dll"
+                    ;;
+                *)
+                    mingw_dll="mingwm10.dll"
+                    ;;
+            esac
+            for dll in $mingw_dll; do
+                if [ -f $mingwdir/bin/$dll ]; then
+                    cp $mingwdir/bin/$dll "$prefix/bin"
                 fi
-            fi
+            done
             ;;
     esac
 }
@@ -334,24 +396,7 @@ function do_fetch_and_install {
             ;;
     esac
 
-    # copy mingw dll
-    case `uname -a` in
-        MINGW*)
-            case "$MSYSTEM" in
-                MINGW64|MINGW32)
-                    mingw_dll="libwinpthread-1.dll"
-                    ;;
-                *)
-                    mingw_dll="mingwm10.dll"
-                    ;;
-            esac
-            for dll in $mingw_dll; do
-                if [ -f $mingwdir/bin/$dll ]; then
-                    cp $mingwdir/bin/$dll "$prefix/bin"
-                fi
-            done
-            ;;
-    esac
+    do_copy_library_files
 
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
@@ -370,6 +415,11 @@ fixed_path=no
 force=no
 keep_builddir=no
 SUDO=
+
+if ! curl --version > /dev/null 2>&1; then
+    echo "Can't find curl on this machine.  Please install it and run get-gauche.sh again."
+    exit 1
+fi
 
 while test $# != 0
 do
@@ -440,6 +490,7 @@ case $desired_version in
     latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
 esac
+do_check_for_windows2
 
 #
 # Compare with current version
@@ -463,13 +514,10 @@ else
         LE) echo "You already have Gauche $current_version in '$gosh_path'."
             if [ "$force" != yes ]; then
                 echo "No need to install.  (Use --force option to install $desired_version.)"
-                exit 0
             fi
             ;;
     esac
 fi
-
-do_check_for_windows2
 
 #
 # Proceed to install
@@ -483,6 +531,16 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
           *) exit 0;;
       esac
     fi
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            do_check_for_windows3
+            ;;
+        *)
+            if [ x$SUDO = x ]; then
+                check_destination $prefix
+            fi
+            ;;
+    esac
     echo "Start installing Gauche $desired_version..."
     do_fetch_and_install
 fi
