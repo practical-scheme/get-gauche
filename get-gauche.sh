@@ -94,15 +94,6 @@ function do_list {
     exit 0
 }
 
-function compare_version {
-    "$gosh_path" -b <<EOF
-(use gauche.version)
-(if (version>? "$1" "$2")
-  (print "GT")
-  (print "LE"))
-EOF
-}
-
 function do_check_for_windows1 {
     # check msys shell
     case `uname -a` in
@@ -140,11 +131,9 @@ function do_check_for_windows1 {
         MINGW*)
             case "$MSYSTEM" in
                 MINGW64)
-                    mingwdir=${MINGWDIR:-/mingw64}
-                    ;;
+                    mingwdir=${MINGWDIR:-/mingw64};;
                 MINGW32)
-                    mingwdir=${MINGWDIR:-/mingw32}
-                    ;;
+                    mingwdir=${MINGWDIR:-/mingw32};;
                 *)
                     #mingwdir=${MINGWDIR:-/mingw}
                     echo 'Environment variable MSYSTEM is neither "MINGW32" or "MINGW64".'
@@ -157,14 +146,12 @@ function do_check_for_windows1 {
 }
 
 function do_check_for_windows2 {
-    # check version
+    # check version (v0.9.4 or earlier)
     case `uname -a` in
         CYGWIN*|MINGW*)
-            cmp=`compare_version $desired_version 0.9.4`
-            case $cmp in
-                LE)
-                    echo "On Windows, this script doesn't support Gauche version"
-                    echo "0.9.4 or earlier."
+            case "$desired_version" in
+                0.9.[234]|0.9.[234][._-]*)
+                    echo "On Windows, this script doesn't support Gauche version 0.9.4 or earlier."
                     echo "Aborting."
                     exit 1
                     ;;
@@ -174,12 +161,11 @@ function do_check_for_windows2 {
 }
 
 function do_check_for_windows3 {
-    # check install path
+    # check install path (v0.9.6_pre3 or earlier)
     case `uname -a` in
         CYGWIN*|MINGW*)
-            cmp=`compare_version $desired_version 0.9.6_pre3`
-            case $cmp in
-                LE)
+            case "$desired_version" in
+                0.9.6_pre[123]|0.9.[2345]|0.9.[2345][._-]*)
                     if echo "$prefix" | grep -q "[[:space:]]"; then
                         echo "Gauche version $desired_version can't be installed to the path"
                         echo "including white space directly."
@@ -312,9 +298,9 @@ function do_patch_to_source {
                 fi
             fi
             # add preload module to avoid load error in gen-staticinit
-            cmp=`compare_version $desired_version 0.9.6_pre6`
-            case $cmp in
-                LE)
+            # (v0.9.6_pre6 or earlier)
+            case "$desired_version" in
+                0.9.6_pre[123456]|0.9.[2345]|0.9.[2345][._-]*)
                     patch_file=src/preload.scm
                     if [ -f $patch_file ]; then
                         if ! grep -q -e '(use gauche\.threads)' $patch_file; then
@@ -325,9 +311,9 @@ function do_patch_to_source {
                     ;;
             esac
             # skip standalone test to avoid link error in MinGW 32bit
-            cmp=`compare_version $desired_version 0.9.6_pre6`
-            case $cmp in
-                LE)
+            # (v0.9.6_pre6 or earlier)
+            case "$desired_version" in
+                0.9.6_pre[123456]|0.9.[2345]|0.9.[2345][._-]*)
                     patch_file=test/scripts.scm
                     if [ -f $patch_file ]; then
                         if ! grep -q -e ';(wrap-with-test-directory static-test-1)' $patch_file; then
@@ -347,11 +333,9 @@ function do_copy_library_files {
         MINGW*)
             case "$MSYSTEM" in
                 MINGW64|MINGW32)
-                    mingw_dll="libwinpthread-1.dll"
-                    ;;
+                    mingw_dll="libwinpthread-1.dll";;
                 *)
-                    mingw_dll="mingwm10.dll"
-                    ;;
+                    mingw_dll="mingwm10.dll";;
             esac
             for dll in $mingw_dll; do
                 if [ -f $mingwdir/bin/$dll ]; then
@@ -401,6 +385,15 @@ function do_fetch_and_install {
     echo "################################################################"
     echo "#  Gauche installed under $prefix/bin"
     echo "################################################################"
+}
+
+function compare_version {
+    "$gosh_path" -b <<EOF
+(use gauche.version)
+(if (version>? "$1" "$2")
+  (print "GT")
+  (print "LE"))
+EOF
 }
 
 ################################################################
@@ -533,8 +526,7 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
     fi
     case `uname -a` in
         CYGWIN*|MINGW*)
-            do_check_for_windows3
-            ;;
+            do_check_for_windows3;;
         *)
             if [ x$SUDO = x ]; then
                 check_destination $prefix
