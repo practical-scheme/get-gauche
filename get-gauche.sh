@@ -12,7 +12,7 @@ function usage {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--keep-builddir][--sudo]
+                  [--fixed-path][--link][--keep-builddir][--sudo]
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -217,10 +217,14 @@ function do_check_prefix {
             echo "Prefix must be specified with --auto option."
             exit 1
         fi
-        echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
-        read prefix < /dev/tty
-        if [ -z "$prefix" ]; then
+        if [ "$check_only" = yes ]; then
             prefix=$default_prefix
+        else
+            echo -n "Where to install Gauche? Enter directory name [$default_prefix]: "
+            read prefix < /dev/tty
+            if [ -z "$prefix" ]; then
+                prefix=$default_prefix
+            fi
         fi
     fi
     # ensure prefix is absolute
