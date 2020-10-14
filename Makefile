@@ -5,6 +5,6 @@ clean:
 	rm -rf core *~ tmpdir
 
 check:
-	./get-gauche.sh --prefix=tmpdir --version snapshot --auto \
+	./get-gauche.sh --force --prefix=tmpdir --version snapshot --auto \
 	  && tmpdir/bin/gosh -V
 

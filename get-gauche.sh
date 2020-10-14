@@ -76,6 +76,9 @@ Options:
         newest snapshot tarball if there's any newer than the latest
         release, or the latest release otherwise.
         By default, 'latest' is assumed.
+
+    --configure-args ARGS
+        Pass ARGS to `configure' script of Gauche.  ARGS are passed as is.
 EOF
 }
 
@@ -369,7 +372,7 @@ function do_fetch_and_install {
 
     case `uname -a` in
         CYGWIN*|MINGW*)
-            ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm
+            ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm $configure_args
             make
             make -s check
             make install
@@ -377,7 +380,7 @@ function do_fetch_and_install {
             make install-examples
             ;;
         *)
-            ./configure "--prefix=$prefix"
+            ./configure "--prefix=$prefix" $configure_args
             make -j
             make -s check
             $SUDO make install
@@ -411,6 +414,7 @@ check_only=no
 fixed_path=no
 force=no
 keep_builddir=no
+configure_args=
 SUDO=
 
 if ! curl --version > /dev/null 2>&1; then
@@ -454,6 +458,8 @@ do
         --fixed-path)    fixed_path=yes ;;
         --force)         force=yes ;;
         --keep-builddir) keep_builddir=yes ;;
+
+        --configure-args) configure_args=$optarg; $extra_shift ;;
 
         --sudo)       SUDO=sudo ;;
 
