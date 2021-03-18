@@ -204,7 +204,7 @@ function do_check_for_windows3 {
 }
 
 function do_check_prefix {
-    gauche_config_path=`/usr/bin/which gauche-config ||:`
+    gauche_config_path=`/usr/bin/which gauche-config 2>/dev/null ||:`
     if [ ! -z "$gauche_config_path" ]; then
         default_prefix=`gauche-config --prefix`
         existing_prefix=$default_prefix
@@ -253,7 +253,7 @@ function do_check_gosh {
         # the given prefix we can find it.
         PATH=$prefix/bin:$PATH
     fi
-    gosh_path=`/usr/bin/which gosh || :`
+    gosh_path=`/usr/bin/which gosh 2>/dev/null || :`
     PATH=$old_path
 }
 
