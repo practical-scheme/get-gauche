@@ -238,8 +238,8 @@ function do_check_prefix {
     esac
 
     case `uname -a` in
-	CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
-	*) ;;
+        CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
+        *) ;;
     esac
 }
 
@@ -441,7 +441,7 @@ do
             extra_shift=shift
             ;;
     esac
-    
+
     case $option in
         --list)     do_list;;
 
@@ -452,7 +452,7 @@ do
         --update)   updating=yes ;;
 
         --version)  desired_version=$optarg; $extra_shift ;;
-        
+
         --auto)          auto=yes ;;
         --check-only)    check_only=yes ;;
         --fixed-path)    fixed_path=yes ;;
