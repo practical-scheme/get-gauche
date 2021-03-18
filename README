@@ -7,6 +7,7 @@ SYNOPSIS
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--keep-builddir][--sudo]
+                  [--skip-tests]
 
 DESCRIPTION
 
@@ -23,7 +24,7 @@ DESCRIPTION
     has already installed but does not attempt to download and install.
 
     The installation location can be specified by --prefix, --system,
-    --home, --update or --current option.  These options are mutually 
+    --home, --update or --current option.  These options are mutually
     exclusive.  When none of these options is given, get-gauche.sh prompts
     the user to enter the location.  (The location must be specified
     with --auto option.)
@@ -32,7 +33,7 @@ DESCRIPTION
     Gauche, regardless of whether Gauche is already installed or not.
 
     By default, installed Gauche is searched in $PATH as well as the
-    specified location.  So, for example, if Gauche is installed under 
+    specified location.  So, for example, if Gauche is installed under
     /usr and 'get-gauche.sh --home' is run, and if it finds /usr/bin/gosh
     and the version requirement is satisfied, it won't attempt to install
     Gauche unless --force option is given.  If you want to ensure that
@@ -88,11 +89,16 @@ OPTIONS
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/{lib,share}, etc.
 
+    --skip-tests
+        Skip running self-tests before installing, in the emergency case
+        when you have to do so.
+        DO NOT USE THIS, unless you know what you're doing.
+
     --sudo
         invoke 'make install' via sudo.  Needed if you want to install
         Gauche where you don't have write permissions.  You may be asked
         to type your password by sudo.
-    
+
     --system
         install Gauche under system directory.
         Equivalent to --prefix /usr.
@@ -130,7 +136,7 @@ EXAMPLES
 
        $ get-gauche.sh --update --sudo --version snapshot
 
-    4. You distribute a Gauche application, and always want to use Gauche 
+    4. You distribute a Gauche application, and always want to use Gauche
     0.9.4 under application-specific directory.  You can run get-gauche.sh
     during the build or installation process of your application as follows:
 
@@ -141,4 +147,3 @@ EXAMPLES
     but only checks /app/dir/gauche.  If there's already 0.9.4 or later
     Gauche under that directory, you'll use it.  Otherwise that version
     is downloaded and installed there.
-

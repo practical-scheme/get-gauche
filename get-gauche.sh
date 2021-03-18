@@ -13,6 +13,8 @@ Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--link][--keep-builddir][--sudo]
+                  [--skip-tests]
+
 Options:
     --auto
         When get-gauche.sh finds Gauche needs to be installed, it proceed
@@ -54,6 +56,11 @@ Options:
     --prefix PREFIX
         install Gauche under PREFIX.  The gosh executable is in PREFIX/bin,
         binary libraries are in PREFIX/lib, etc.
+
+    --skip-tests
+        Skip running self-tests before installing, in the emergency case
+        when you have to do so.
+        DO NOT USE THIS, unless you know what you're doing.
 
     --sudo
         invoke 'make install' via sudo.  Needed if you want to install
@@ -374,7 +381,9 @@ function do_fetch_and_install {
         CYGWIN*|MINGW*)
             ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm $configure_args
             make
-            make -s check
+            if [ "$skip_tests" != yes ]; then
+               make -s check
+            fi
             make install
             (cd src; make install-mingw)
             make install-examples
@@ -382,7 +391,9 @@ function do_fetch_and_install {
         *)
             ./configure "--prefix=$prefix" $configure_args
             make -j
-            make -s check
+            if [ "$skip_tests" != yes ]; then
+               make -s check
+            fi
             $SUDO make install
             ;;
     esac
@@ -415,6 +426,7 @@ fixed_path=no
 force=no
 keep_builddir=no
 configure_args=
+skip_tests=no
 SUDO=
 
 if ! curl --version > /dev/null 2>&1; then
@@ -458,6 +470,7 @@ do
         --fixed-path)    fixed_path=yes ;;
         --force)         force=yes ;;
         --keep-builddir) keep_builddir=yes ;;
+        --skip-tests)    skip_tests=yes ;;
 
         --configure-args) configure_args=$optarg; $extra_shift ;;
 
@@ -533,6 +546,14 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
           [yY]*) ;;
           *) exit 0;;
       esac
+      if [ "$skip_tests" = yes ]; then
+          echo -n "You specified to skip tests.  Are you sure? [y/N]: "
+          read ans < /dev/tty
+          case "$ans" in
+              [yY]*) ;;
+              *) exit 0;;
+          esac
+      fi
     fi
     case `uname -a` in
         CYGWIN*|MINGW*)
