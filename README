@@ -7,7 +7,7 @@ SYNOPSIS
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--keep-builddir][--sudo]
-                  [--skip-tests]
+                  [--skip-tests][--uninstall]
 
 DESCRIPTION
 
@@ -55,6 +55,9 @@ OPTIONS
         detect Gauche and report result, but not to attempt download
         and install.
 
+    --configure-args ARGS
+        Pass ARGS to `configure' script of Gauche.  ARGS are passed as is.
+
     --current
         install Gauche under the current directory (e.g. ./bin/gosh for
         executable, ./{lib,share}/gauche-x.x/ for libraries, etc.)
@@ -99,10 +102,6 @@ OPTIONS
         Gauche where you don't have write permissions.  You may be asked
         to type your password by sudo.
 
-    --system
-        install Gauche under system directory.
-        Equivalent to --prefix /usr.
-
     --uninstall
         uninstall the version of Gauche which would've been installed if
         this option weren't given.  The other versions of Gauche remains,
@@ -114,6 +113,10 @@ OPTIONS
         install Gauche under the same directory as the currently installed
         one.  If no previous installation is found, get-gauche.sh prompts the
         user to type the directory.
+
+    --system
+        install Gauche under system directory.
+        Equivalent to --prefix /usr.
 
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version

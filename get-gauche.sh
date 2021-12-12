@@ -12,8 +12,8 @@ function usage {
 Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--link][--keep-builddir][--sudo]
-                  [--skip-tests]
+                  [--fixed-path][--keep-builddir][--sudo]
+                  [--skip-tests][--uninstall]
 
 Options:
     --auto
@@ -24,6 +24,9 @@ Options:
     --check-only
         detect Gauche and report result, but not to attempt download
         and install.
+
+    --configure-args ARGS
+        Pass ARGS to `configure' script of Gauche.  ARGS are passed as is.
 
     --current
         install Gauche under the current directory.
@@ -90,9 +93,6 @@ Options:
         newest snapshot tarball if there's any newer than the latest
         release, or the latest release otherwise.
         By default, 'latest' is assumed.
-
-    --configure-args ARGS
-        Pass ARGS to `configure' script of Gauche.  ARGS are passed as is.
 EOF
 }
 
