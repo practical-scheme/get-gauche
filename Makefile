@@ -7,4 +7,5 @@ clean:
 check:
 	./get-gauche.sh --force --prefix=tmpdir --version snapshot --auto \
 	  && tmpdir/bin/gosh -V
-
+	./get-gauche.sh --force --prefix=tmpdir --version snapshot --auto \
+	  --uninstall && ls -lR tmpdir
