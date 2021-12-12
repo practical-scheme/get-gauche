@@ -67,6 +67,13 @@ Options:
         Gauche where you don't have write permissions.  You may be asked
         to type your password by sudo.
 
+    --uninstall
+        uninstall the version of Gauche which would've been installed if
+        this option weren't given.  The other versions of Gauche remains,
+        if they exist.  Note: This operation removes all the files of the
+        specified version, but may keep empty directories created by
+        installation.
+
     --update
         install Gauche under the same directory as the currently installed
         one.  If no previous installation is found, get-gauche.sh prompts the
@@ -360,10 +367,13 @@ function do_copy_library_files {
     esac
 }
 
-function do_fetch_and_install {
+# After this, cwd is the top of the extracted source tree ready to be built.
+function do_fetch_and_cd {
     CWD=`pwd`
     DATETIME=`date +%Y%m%d_%H%M%S`
     WORKDIR=`mktemp -d "$CWD/build-$DATETIME.XXXXXXXX"`
+
+    uninstall=$1
 
     cd $WORKDIR
     if ! curl -f -L --progress-bar -o Gauche-$desired_version.tgz $API/$desired_version.tgz; then
@@ -376,7 +386,10 @@ function do_fetch_and_install {
     cd Gauche-*
 
     do_patch_to_source
+}
 
+# Must be called in the top of extracted source tree
+function do_install {
     case `uname -a` in
         CYGWIN*|MINGW*)
             ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm $configure_args
@@ -401,7 +414,24 @@ function do_fetch_and_install {
     do_copy_library_files
 
     echo "################################################################"
-    echo "#  Gauche installed under $prefix/bin"
+    echo "#  Gauche installed under $prefix/{bin,lib,share}"
+    echo "################################################################"
+}
+
+function do_uninstall {
+    case `uname -a` in
+        CYGWIN*|MINGW*)
+            ./configure "--prefix=$prefix" --with-dbm=ndbm,odbm $configure_args
+            make uninstall
+            ;;
+        *)
+            ./configure "--prefix=$prefix" $configure_args
+            $SUDO make uninstall
+            ;;
+    esac
+
+    echo "################################################################"
+    echo "#  Gauche uninstalled from $prefix/{bin,lib,share}"
     echo "################################################################"
 }
 
@@ -462,6 +492,7 @@ do
         --current)  prefix=`pwd` ;;
         --prefix)   prefix=$optarg; $extra_shift ;;
         --update)   updating=yes ;;
+        --uninstall) uninstalling=yes ;;
 
         --version)  desired_version=$optarg; $extra_shift ;;
 
@@ -540,7 +571,11 @@ fi
 #
 if [ "$force" = yes -o "$need_install" = yes ]; then
     if [ "$auto" != yes ]; then
-      echo -n "Install Gauche $desired_version under $prefix? [y/N]: "
+      if [ "$uninstalling" != yes ]; then
+          echo -n "Install Gauche $desired_version under $prefix? [y/N]: "
+      else
+          echo -n "Uninstall Gauche $desired_version under $prefix? [y/N]: "
+      fi
       read ans < /dev/tty
       case "$ans" in
           [yY]*) ;;
@@ -565,5 +600,10 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
             ;;
     esac
     echo "Start installing Gauche $desired_version..."
-    do_fetch_and_install
+    do_fetch_and_cd
+    if [ "$uninstalling" != yes ]; then
+        do_install
+    else
+        do_uninstall
+    fi
 fi
