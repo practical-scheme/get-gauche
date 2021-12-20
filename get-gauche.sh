@@ -403,11 +403,13 @@ function do_install {
             ;;
         *)
             ./configure "--prefix=$prefix" $configure_args
-            make -j
+            MAKE=make
+            if hash gmake 2>/dev/null; then MAKE=gmake; fi
+            $MAKE -j
             if [ "$skip_tests" != yes ]; then
-               make -s check
+               $MAKE -s check
             fi
-            $SUDO make install
+            $SUDO $MAKE install
             ;;
     esac
 
@@ -426,7 +428,9 @@ function do_uninstall {
             ;;
         *)
             ./configure "--prefix=$prefix" $configure_args
-            $SUDO make uninstall
+            MAKE=make
+            if hash gmake 2>/dev/null; then MAKE=gmake; fi
+            $SUDO $MAKE uninstall
             ;;
     esac
 
