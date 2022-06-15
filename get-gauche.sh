@@ -13,7 +13,7 @@ Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--keep-builddir][--sudo]
-                  [--skip-tests][--uninstall]
+                  [--skip-tests][--configure-args ARGS][--uninstall]
 
 Options:
     --auto
@@ -511,7 +511,7 @@ do
 
         --sudo)       SUDO=sudo ;;
 
-        *) usage; exit 1;;
+        *) echo "Unrecognized option: $option"; usage; exit 1;;
     esac
     shift
 done
