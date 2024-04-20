@@ -131,18 +131,6 @@ function do_check_for_windows1 {
             fi
             ;;
     esac
-    # check openssl
-    case `uname -a` in
-        CYGWIN*|MINGW*)
-            openssl=`/usr/bin/which openssl || :`
-            if echo "$openssl" | grep -q -E "/mingw(64|32)"; then
-                echo "$openssl causes make check hang-up."
-                echo "Please delete or rename this."
-                echo "Aborting."
-                exit 1
-            fi
-            ;;
-    esac
     # get mingw directory
     case `uname -a` in
         MINGW*)
