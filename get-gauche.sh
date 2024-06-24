@@ -5,7 +5,7 @@ set -e
 API=https://practical-scheme.net/gauche/releases
 
 # Ensure Gauche availability
-# https://github.com/shirok/get-gauche/README
+# See https://github.com/practical-scheme/get-gauche/README
 
 function usage {
     cat <<"EOF"
