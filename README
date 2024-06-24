@@ -6,8 +6,8 @@ SYNOPSIS
 
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
-                  [--fixed-path][--keep-builddir][--sudo]
-                  [--skip-tests][--uninstall]
+                  [--skip-tests][--configure-args ARGS][--destdir DIR]
+                  [--uninstall]
 
 DESCRIPTION
 
@@ -62,6 +62,10 @@ OPTIONS
         install Gauche under the current directory (e.g. ./bin/gosh for
         executable, ./{lib,share}/gauche-x.x/ for libraries, etc.)
         Equivalent to --prefix `pwd`.
+
+    --destdir DIR
+        set DESIDIR to DIR when run `male install'.  This can be used to
+        prepare a binary tarball.
 
     --fixed-path
         detect Gauche only under prefix (specified by --prefix, --system,

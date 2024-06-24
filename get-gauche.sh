@@ -13,7 +13,8 @@ Usage:
     get-gauche.sh [--system|--home|--current|--prefix PREFIX|--update]
                   [--auto][--version VERSION][--check-only][--force][--list]
                   [--fixed-path][--keep-builddir][--sudo]
-                  [--skip-tests][--configure-args ARGS][--uninstall]
+                  [--skip-tests][--configure-args ARGS][--destdir DIR]
+                  [--uninstall]
 
 Options:
     --auto
@@ -31,6 +32,10 @@ Options:
     --current
         install Gauche under the current directory.
         Equivalent to --prefix `pwd`.
+
+    --destdir DIR
+        set DESIDIR to DIR when run `male install'.  This can be used to
+        prepare a binary tarball.
 
     --fixed-path
         detect Gauche only under prefix (specified by --prefix, --system,
@@ -232,17 +237,6 @@ function do_check_prefix {
             fi
         fi
     fi
-    # ensure prefix is absolute
-    case $prefix in
-        /*) ;;
-        [A-Za-z]:*) ;;
-        *) prefix=`pwd`/$prefix ;;
-    esac
-
-    case `uname -a` in
-        CYGWIN*|MINGW*) prefix=`cygpath "$prefix"` ;;
-        *) ;;
-    esac
 }
 
 function do_check_gosh {
@@ -257,6 +251,24 @@ function do_check_gosh {
     fi
     gosh_path=`/usr/bin/which gosh 2>/dev/null || :`
     PATH=$old_path
+}
+
+# Make path absolute, and canonical form if we're on Windows.
+function canonical_path {
+    path=$1
+
+    case $path in
+        /*) ;;
+        [A-Za-z]:*) ;;
+        *) path=`pwd`/$path ;;
+    esac
+
+    case `uname -a` in
+        CYGWIN*|MINGW*) path=`cygpath "$path"` ;;
+        *) ;;
+    esac
+
+    echo $path
 }
 
 function check_destination {
@@ -385,9 +397,18 @@ function do_install {
             if [ "$skip_tests" != yes ]; then
                make -s check
             fi
-            make install
-            (cd src; make install-mingw)
-            make install-examples
+            # If we use $destdir, we can't simply run 'make install', for
+            # it tries to recreate slibcat in $prefix.
+            if [ -z "$destdir" ]; then
+                make install
+                (cd src; make install-mingw)
+                make install-examples
+            else
+                make DESTDIR=$destdir install-pkg
+                make DESTDIR=$destdir install-doc
+                (cd src; make DESTDIR=$destdir install-mingw)
+                make DESTDIR=$destdir install-examples
+            fi
             ;;
         *)
             ./configure "--prefix=$prefix" $configure_args
@@ -397,14 +418,22 @@ function do_install {
             if [ "$skip_tests" != yes ]; then
                $MAKE -s check
             fi
-            $SUDO $MAKE install
+
+            # If we use $destdir, we can't simply run 'make install', for
+            # it tries to recreate slibcat in $prefix.
+            if [ -z "$destdir" ]; then
+                $SUDO $MAKE install
+            else
+                $SUDO $MAKE DESTDIR=$destdir install-pkg
+                $SUDO $MAKE DESTDIR=$destdir install-doc
+            fi
             ;;
     esac
 
     do_copy_library_files
 
     echo "################################################################"
-    echo "#  Gauche installed under $prefix/{bin,lib,share}"
+    echo "#  Gauche installed under $destdir$prefix/{bin,lib,share}"
     echo "################################################################"
 }
 
@@ -442,6 +471,7 @@ EOF
 
 prefix=
 updating=
+destdir=
 desired_version=latest
 check_only=no
 fixed_path=no
@@ -483,6 +513,7 @@ do
         --home)     prefix=$HOME ;;
         --current)  prefix=`pwd` ;;
         --prefix)   prefix=$optarg; $extra_shift ;;
+        --destdir)  destdir=$optarg; $extra_shift ;;
         --update)   updating=yes ;;
         --uninstall) uninstalling=yes ;;
 
@@ -506,7 +537,12 @@ done
 
 do_check_for_windows1
 do_check_prefix
-do_check_gosh
+prefix=`canonical_path "$prefix"`
+if [ -z "$destdir" ]; then
+    do_check_gosh;
+else
+    destdir=`canonical_path "$destdir"`
+fi
 
 #
 # If --check-only, just report the check result and exit
@@ -538,7 +574,11 @@ if [ ! -z "$gosh_path" ]; then
    current_version=`"$gosh_path" -E "print (gauche-version)" -Eexit`
 fi
 
-if [ -z "$current_version" ]; then
+if [ ! -z "$destdir" ]; then
+    # if we're making binary tarball, install it unconditionally.
+    need_install=yes
+    auto=yes
+elif [ -z "$current_version" ]; then
     if [ "$fixed_path" = "yes" ]; then
         echo "Gauche is not found in $prefix."
     else
@@ -587,7 +627,7 @@ if [ "$force" = yes -o "$need_install" = yes ]; then
             do_check_for_windows3;;
         *)
             if [ x$SUDO = x ]; then
-                check_destination $prefix
+                check_destination "$destdir$prefix"
             fi
             ;;
     esac
