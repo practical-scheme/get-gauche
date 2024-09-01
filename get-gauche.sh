@@ -93,10 +93,14 @@ Options:
 
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version
-        string (e.g. '0.9.5'), or either 'latest' or 'snapshot'.  The word
-        'latest' picks the latest release.  The word 'snapshot' picks the
-        newest snapshot tarball if there's any newer than the latest
-        release, or the latest release otherwise.
+        string (e.g. '0.9.5'), or either one of the following:
+         * 'latest' : The latest official release
+         * 'snapshot' : The latest "snapshot" release, usually suffixed with
+              '-p1' or -p2', if it's newer than the latest release.  Otherwise,
+              the latest release.
+         * 'bleeding' : The latest "bleeding-edge" sources, which is created
+              daily automatically.  Note that it may be unstable or even
+              doesn't build.
         By default, 'latest' is assumed.
 EOF
 }
@@ -456,9 +460,19 @@ function do_uninstall {
     echo "################################################################"
 }
 
+# TRANSIENT: Gauche 0.9.15 or before can't handle bleeding edge version
+# numbers, so we monkey-patch it.  This calls user-side gosh, so we have
+# to keep the monkey-patch around until all the user installations of
+# Gauche is updated.
 function compare_version {
     "$gosh_path" -b <<EOF
 (use gauche.version)
+(with-module gauche.version
+  (define (relnum-decompose vn)
+    (rxmatch-if (rxmatch #/^(\d*)([^-_.]*)$/ vn) (#f num suffix)
+      (values (if (string=? num "") -1 (x->integer num)) suffix)
+      (errorf "unparsable release number: ~s" vn)))
+  )
 (if (version>? "$1" "$2")
   (print "GT")
   (print "LE"))
@@ -564,6 +578,7 @@ fi
 case $desired_version in
     latest)   desired_version=`curl -f $API/latest.txt 2>/dev/null`;;
     snapshot) desired_version=`curl -f $API/snapshot.txt 2>/dev/null`;;
+    bleeding) desired_version=`curl -f $API/bleeding.txt 2>/dev/null`;;
 esac
 do_check_for_windows2
 

@@ -124,11 +124,15 @@ OPTIONS
 
     --version VERSION
         specify the desired version of Gauche.  VERSION can be a version
-        string (e.g. `0.9.5'), or either `latest' or `snapshot'.  The word
-        `latest' picks the latest release.  The word `snapshot' picks the
-        newest snapshot tarball if there's any newer than the latest
-        release, or the latest release otherwise.
-        By default, `latest' is assumed.
+        string (e.g. '0.9.5'), or either one of the following:
+         * 'latest' : The latest official release
+         * 'snapshot' : The latest "snapshot" release, usually suffixed with
+              '-p1' or -p2', if it's newer than the latest release.  Otherwise,
+              the latest release.
+         * 'bleeding' : The latest "bleeding-edge" sources, which is created
+              daily automatically.  Note that it may be unstable or even
+              doesn't build.
+        By default, 'latest' is assumed.
 
 EXAMPLES
 
