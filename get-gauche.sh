@@ -418,7 +418,9 @@ function do_install {
             ./configure "--prefix=$prefix" $configure_args
             MAKE=make
             if hash gmake 2>/dev/null; then MAKE=gmake; fi
-            $MAKE -j
+            NUM_PROCS=`nproc 2> /dev/null || :`
+            echo "Running $MAKE -j $NUM_PROCS"
+            $MAKE -j $NUM_PROCS
             if [ "$skip_tests" != yes ]; then
                $MAKE -s check
             fi
